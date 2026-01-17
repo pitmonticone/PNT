@@ -24,23 +24,6 @@ open Chebyshev Finset Nat Real
 theorem pnt : ∃ C, ∀ x ≥ 2, |θ x - x| ≤ C * x / log x ^ 2 := by sorry
 
 @[blueprint
-  "rs-B"
-  (title := "Meissel-Mertens constant B")
-  (statement := /--
-  $B := \lim_{x \to \infty} \left( \sum_{p \leq x} \frac{1}{p} - \log \log x \right)$. -/)]
-noncomputable def B : ℝ :=
-  lim (Filter.atTop.comap (fun x : ℝ ↦ ∑ p ∈ Finset.filter Nat.Prime (Finset.range ⌊x⌋₊), 1 / p - log (log x)))
-
-
-@[blueprint
-  "rs-E"
-  (title := "Mertens constant E")
-  (statement := /--
-  $E := \lim_{x \to \infty} \left( \sum_{p \leq x} \frac{\log p}{p} - \log x \right)$. -/)]
-noncomputable def E : ℝ :=
-  lim (Filter.atTop.comap (fun x : ℝ ↦ ∑ p ∈ Finset.filter Nat.Prime (Finset.range ⌊x⌋₊), Real.log p / p - log x))
-
-@[blueprint
   "theta-stieltjes"
   (title := "The Chebyshev function is Stieltjes")
   (statement := /-- The function $\vartheta(x) = \sum_{p \leq x} \log p$ defines a Stieltjes function (monotone and right continuous). -/)
@@ -88,7 +71,7 @@ theorem eq_413 {f : ℝ → ℝ} (hf : DifferentiableOn ℝ f (Set.Ici 2)) {x : 
   (title := "RS equation (4.14)")
   (statement := /--
   $$\sum_{p \leq x} f(p) = \int_2^x \frac{f(y)\ dy}{\log y} + \frac{2 f(2)}{\log 2} $$
-  $$ + \frac{f(x) (\vartheta(x) - x)}{\log x} - \int_2^x (\vartheta(y) - y) \frac{d}{dy} \frac{d}{dy}( \frac{f(y)}{\log y} )\ dy.$$ -/)
+  $$ + \frac{f(x) (\vartheta(x) - x)}{\log x} - \int_2^x (\vartheta(y) - y) \frac{d}{dy}( \frac{f(y)}{\log y} )\ dy.$$ -/)
   (proof := /-- Follows from Sublemma \ref{rs-413} and integration by parts. -/)
   (latexEnv := "sublemma")
   (discussion := 600)]
@@ -96,7 +79,7 @@ theorem eq_414 {f : ℝ → ℝ} (hf : DifferentiableOn ℝ f (Set.Ici 2)) {x : 
     ∑ p ∈ filter Prime (Iic ⌊x⌋₊), f p =
       ∫ y in 2..x, f y / log y + 2 * f 2 / Real.log 2 +
       f x * (θ x - x) / log x -
-      ∫ y in 2..x, (θ y - y) * deriv (fun t ↦ deriv (fun s ↦ f s / log s) t) y := by
+      ∫ y in 2..x, (θ y - y) * deriv (fun s ↦ f s / log s) y := by
   sorry
 
 
@@ -114,14 +97,14 @@ noncomputable def L (f : ℝ → ℝ) : ℝ :=
   (title := "RS equation (4.15)")
   (statement := /--
   $$\sum_{p \leq x} f(p) = \int_2^x \frac{f(y)\ dy}{\log y} + L_f $$
-  $$ + \frac{f(x) (\vartheta(x) - x)}{\log x} + \int_x^\infty (\vartheta(y) - y) \frac{d}{dy} \frac{d}{dy}( \frac{f(y)}{\log y} )\ dy.$$ -/)
+  $$ + \frac{f(x) (\vartheta(x) - x)}{\log x} + \int_x^\infty (\vartheta(y) - y) \frac{d}{dy}( \frac{f(y)}{\log y} )\ dy.$$ -/)
   (proof := /-- Follows from Sublemma \ref{rs-414} and Definition \ref{rs-416}. -/)
   (latexEnv := "sublemma")
   (discussion := 601)]
 theorem eq_415 {f : ℝ → ℝ} (hf : DifferentiableOn ℝ f (Set.Ici 2)) {x : ℝ} (hx : 2 ≤ x)
    (hbound : ∃ C, ∀ x ∈ Set.Ici 2, |f x| ≤ C / x ∧ |deriv f x| ≤ C / x ^ 2) :
    ∑ p ∈ filter Prime (Iic ⌊x⌋₊), f p = ∫ y in 2..x, f y / log y + L f +
-    f x * (θ x - x) / log x + ∫ y in Set.Ioi x, (θ y - y) * deriv (fun t ↦ deriv (fun s ↦ f s / log s) t) y := by sorry
+    f x * (θ x - x) / log x + ∫ y in Set.Ioi x, (θ y - y) * deriv (fun s ↦ f s / log s) y := by sorry
 
 @[blueprint
   "rs-417"
@@ -152,7 +135,7 @@ theorem eq_418 {x : ℝ} (hx : 2 ≤ x) :
 @[blueprint
   "rs-419"]
 theorem mertens_second_theorem : Filter.atTop.Tendsto (fun x : ℝ ↦
-    ∑ p ∈ filter Nat.Prime (range ⌊x⌋₊), 1 / p - log (log x) - B) (nhds 0) := by sorry
+    ∑ p ∈ filter Nat.Prime (range ⌊x⌋₊), 1 / p - log (log x) - meisselMertensConstant) (nhds 0) := by sorry
 
 @[blueprint
   "rs-419"
@@ -166,8 +149,7 @@ theorem mertens_second_theorem : Filter.atTop.Tendsto (fun x : ℝ ↦
   (discussion := 603)]
 theorem eq_419 {x : ℝ} (hx : 2 ≤ x) :
     ∑ p ∈ filter Prime (Iic ⌊x⌋₊), 1 / p =
-      log (log x) + B + (θ x - x) / (x * log x) - ∫ y in 2..x, (θ y - y) * (1 + log y) / (y ^ 2 * log y ^ 2) := by sorry
-
+      log (log x) + meisselMertensConstant + (θ x - x) / (x * log x) - ∫ y in 2..x, (θ y - y) * (1 + log y) / (y ^ 2 * log y ^ 2) := by sorry
 @[blueprint
   "rs-419"]
 theorem mertens_second_theorem' :
@@ -176,7 +158,7 @@ theorem mertens_second_theorem' :
 @[blueprint
   "rs-420"]
 theorem mertens_first_theorem : Filter.atTop.Tendsto (fun x : ℝ ↦
-    ∑ p ∈ filter Nat.Prime (range ⌊x⌋₊), Real.log p / p - log x - E) (nhds 0) := by sorry
+    ∑ p ∈ filter Nat.Prime (range ⌊x⌋₊), Real.log p / p - log x - mertensConstant) (nhds 0) := by sorry
 
 @[blueprint
   "rs-420"
@@ -190,7 +172,7 @@ theorem mertens_first_theorem : Filter.atTop.Tendsto (fun x : ℝ ↦
   (discussion := 604)]
 theorem eq_420 {x : ℝ} (hx : 2 ≤ x) :
     ∑ p ∈ filter Prime (Iic ⌊x⌋₊), Real.log p / p =
-      log x + E + (θ x - x) / x - ∫ y in 2..x, (θ y - y) / (y ^ 2) := by sorry
+      log x + mertensConstant + (θ x - x) / x - ∫ y in 2..x, (θ y - y) / (y ^ 2) := by sorry
 
 @[blueprint
   "rs-420"]

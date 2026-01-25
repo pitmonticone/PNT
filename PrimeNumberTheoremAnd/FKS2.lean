@@ -4,7 +4,7 @@ import PrimeNumberTheoremAnd.BKLNW
 import PrimeNumberTheoremAnd.RosserSchoenfeldPrime
 
 blueprint_comment /--
-\section{The implications of FKS2}
+\section{The implications of FKS2}\label{fks2-sec}
 
 In this file we record the implications in the paper \cite{FKS2}.  Roughly speaking, this paper has two components: a "$\psi$ to $\theta$ pipeline" that converts estimates on the error $E_\psi(x) = |\psi(x)-x|/x$ in the prime number theorem for the first Chebyshev function $\psi$ to estimates on the error $E_\theta(x) = |\theta(x)-x|/x$ in the prime number theorem for the second Chebyshev function $\theta$; and a "$\theta$ to $\pi$ pipeline" that converts estimates $E_\theta$ to estimates on the error $E_\pi(x) = |\pi(x) - \Li(x)|/(x/\log x)$ in the prime number theorem for the prime counting function $\pi$.  Each pipeline converts "admissible classical bounds" (Definitions \ref{classical-bound-psi} \ref{classical-bound-theta}, \ref{classical-bound-pi}) of one error to admissible classical bounds of the next error in the pipeline.
 
@@ -366,9 +366,48 @@ We can now obtain an upper bound on $E_\pi$ in terms of $E_\theta$:
   (proof := /-- This follows from applying the triangle inequality to Sublemma \ref{fks2-eq-17}. -/)
   (latexEnv := "sublemma")
   (discussion := 741)]
-theorem eq_30 {x x₀ : ℝ} (hx : x ≥ x₀) :
-  Eπ x ≤ Eψ x + δ x₀ + (log x / x) * ∫ t in x₀..x, Eθ t / log t ^ 2 :=
-  by sorry
+theorem eq_30 {x x₀ : ℝ} (hx : x ≥ x₀) (hx₀ : x₀ ≥ 2) :
+  Eπ x ≤ Eθ x + (log x / x) * (x₀ / log x₀) * δ x₀ + (log x / x) * ∫ t in x₀..x, Eθ t / log t ^ 2 := by
+  -- NOTE: the hypothesis `hx₀` was added to apply `eq_17`.
+  -- It is not present in the original source material [FKS2].
+  have : (log x / x) * (x₀ / log x₀) * δ x₀ = (log x / x) * |pi x₀ - Li x₀ - (θ x₀ - x₀) / log x₀| := by
+    unfold δ
+    have : log x₀ > 0 := log_pos (by linarith)
+    field_simp
+    rw [abs_div, abs_of_nonneg (by linarith : x₀ ≥ 0), abs_div, abs_of_pos this]
+    field_simp
+  rw [this]; unfold Eπ Eθ
+  field_simp [(by linarith : x > 0)]
+  calc
+    _ = |pi x - Li x - (pi x₀ - Li x₀) + pi x₀ - Li x₀| * log x := by ring_nf
+    _ = |(θ x - x) / log x
+        + (pi x₀ - Li x₀ - (θ x₀ - x₀) / log x₀)
+        + (∫ t in x₀..x, (θ t - t) / (t * log t ^ 2))| * log x := by
+      by_cases h : x = x₀
+      · rw [h, intervalIntegral.integral_same]; ring_nf
+      · congr
+        rw [eq_17 hx₀ (lt_of_le_of_ne hx (Ne.symm h))]
+        ring
+    _ ≤ |(θ x - x) / log x| * log x
+        + |pi x₀ - Li x₀ - (θ x₀ - x₀) / log x₀| * log x
+        + |∫ t in x₀..x, (θ t - t) / (t * log t ^ 2)| * log x := by
+      rw [← distrib_three_right]; gcongr
+      · exact log_nonneg (by linarith)
+      · exact abs_add_three _ _ _
+    _ ≤ |θ x - x|
+        + log x * |pi x₀ - Li x₀ - (θ x₀ - x₀) / log x₀|
+        + log x * ∫ t in x₀..x, |θ t - t| / (t * log t ^ 2) := by
+      have : log x > 0 := log_pos (by linarith)
+      rw [abs_div, abs_of_pos this]
+      field_simp [this]
+      gcongr
+      have : ∫ t in x₀..x, |θ t - t| / (t * log t ^ 2) = ∫ t in x₀..x, |(θ t - t) / (t * log t ^ 2)| := by
+        apply intervalIntegral.integral_congr_ae
+        filter_upwards with t ht
+        rw [Set.uIoc_of_le hx, Set.mem_Ioc] at ht
+        have : t * log t ^ 2 ≥ 0 := mul_nonneg (by linarith) (pow_two_nonneg (log t))
+        rw [abs_div, abs_of_nonneg this]
+      simp only [this, intervalIntegral.abs_integral_le_integral_abs hx]
 
 blueprint_comment /--
 Next, we bound the integral appearing in Sublemma \ref{fks2-eq-17}.
@@ -563,19 +602,19 @@ theorem lemma_19 {x₀ x₁ : ℝ} (hx₁ : x₁ > x₀) (hx₀ : x₀ ≥ 2)
   (discussion := 713)]
 theorem lemma_20_a : StrictMonoOn (fun x ↦ Li x - x / log x) (Set.Ioi 6.58) := sorry
 
+/- [FIX]: This fixes a typo in the original paper https://arxiv.org/pdf/2206.12557. -/
 @[blueprint
   "fks2-lemma-20b"
   (title := "FKS2 Lemma 20b")
   (statement := /--
-  Assume $x \geq 6.58$. Then
+  Assume $x > 6.58$. Then
   $\Li(x) - \frac{x}{\log x} > \frac{x-6.58}{\log^2 x} > 0$.
   -/)
   (proof := /-- This follows from Lemma \ref{fks2-lemma-20a} and the mean value theorem. -/)
   (latexEnv := "lemma")
   (discussion := 714)]
-theorem lemma_20_b {x : ℝ} (hx : x ≥ 6.58) :
-  Li x - x / log x > (x - 6.58) / (log x) ^ 2 ∧
-  (x - 6.58) / (log x) ^ 2 > 0 :=
+theorem lemma_20_b {x : ℝ} (hx : x > 6.58) :
+    Li x - x / log x > (x - 6.58) / (log x) ^ 2 ∧ (x - 6.58) / (log x) ^ 2 > 0 :=
   sorry
 
 blueprint_comment /--

@@ -171,9 +171,11 @@ theorem thm_1a_crit {b M m : ℝ} (h_check : check_row_prop (b, M, m)) {x : ℝ}
   rw [show Pre_inputs.default.ε = BKLNW_app.table_8_ε by rfl] at this
   grind
 
-
-
-theorem thm_1a_table {b M m : ℝ} (h_table : (b, M, m) ∈ Table_14) {x : ℝ} (hx : x ≥ exp b) :
+@[blueprint
+  "bklnw-thm-1a-table"
+  (statement := /-- The previous theorem holds with $(b,M,m)$ given by the values in \cite[Table 14]{BKLNW}. -/)
+  (latexEnv := "theorem")]
+theorem thm_1a_table {b M m : ℝ} (h_table : (b, M, m) ∈ table_14) {x : ℝ} (hx : x ≥ exp b) :
     x * (1 - m) ≤ θ x ∧ θ x ≤ x * (1 + M) := thm_1a_crit (table_14_check h_table) hx
 
 
@@ -181,20 +183,20 @@ theorem thm_1a_table {b M m : ℝ} (h_table : (b, M, m) ∈ Table_14) {x : ℝ} 
   "bklnw-cor-2-1"
   (title := "BKLNW Corollary 2.1")
   (statement := /-- $\theta(x) \leq (1 + 1.93378 \times 10^{-8}) x$. -/)
-  (proof := /-- We combine together Theorem \ref{from-buthe-eq-1-7} and Theorem \ref{bklnw-thm-1a} with $X_1 = 10^{19}$, using Table 14. -/)
+  (proof := /-- We combine together Theorem \ref{from-buthe-eq-1-7} and Theorem \ref{bklnw-thm-1a-table} with $X_1 = 10^{19}$. -/)
   (latexEnv := "corollary")
   (discussion := 791)]
-theorem cor_2_1 : ∀ x > 0, θ x ≤ (1 + 1.93378e-8) * x := by
+theorem cor_2_1 : ∀ x > 0, θ x ≤ (1 + (1.93378e-8*BKLNW_app.table_8_margin)) * x := by
   intro x hx_pos
   by_cases hx : x ≤ 1e19
   · exact le_trans (le_of_lt (buthe_eq_1_7 x ⟨hx_pos, hx⟩)) (le_mul_of_one_le_left hx_pos.le (by norm_num))
   · push_neg at hx
     have h_exp20 : 1e19 ≥ exp 20 := by grw [← exp_one_rpow 20, Real.exp_one_lt_d9]; norm_num only
-    suffices Pre_inputs.default.ε (log 1e19) ≤ 1.93378e-8 by
+    suffices Pre_inputs.default.ε (log 1e19) ≤ 1.93378e-8 * BKLNW_app.table_8_margin by
       grw [(thm_1a h_exp20 h_exp20 hx.le hx.le).2, this, mul_comm]
     unfold Pre_inputs.default
     suffices 43 < log 1e19 ∧ log 1e19 < 44 by
-      change BKLNW_app.table_8_ε (log 1e19) ≤ 1.93378e-8
+      change BKLNW_app.table_8_ε (log 1e19) ≤ 1.93378e-8 * BKLNW_app.table_8_margin
       grw [BKLNW_app.table_8_ε.le_simp (log 1e19) (by grind)]
       grind [BKLNW_app.table_8_ε']
     rw [lt_log_iff_exp_lt (by positivity), log_lt_iff_lt_exp (by positivity),
@@ -212,7 +214,7 @@ structure Inputs extends Pre_inputs where
   (statement := /-- We take $\alpha = 1.93378 \times 10^{-8}$, so that we have $\theta(x) \leq (1 + \alpha) x$ for all $x$. -/)]
 noncomputable def Inputs.default : Inputs := {
   toPre_inputs := Pre_inputs.default
-  α := 1.93378e-8
+  α := 1.93378e-8 * BKLNW_app.table_8_margin
   hα := cor_2_1
 }
 

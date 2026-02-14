@@ -55,6 +55,9 @@
 __pycache__/
 *.pyc
 
+## Claude Code
+.claude/
+
 ## Project
 /scratch.lean
 /tmp/

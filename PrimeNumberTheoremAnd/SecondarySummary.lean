@@ -140,8 +140,9 @@ blueprint_comment /-- The results below are taken from https://tme-emt-wiki-gitl
   \]
   -/)
   (latexEnv := "theorem")]
-theorem Schoenfeld1976.has_prime_in_interval (x : ℝ) (hx : x > 2010760) :
-    HasPrimeInInterval (x*(1-1/15697)) (x/15697) := by sorry
+theorem Schoenfeld1976.has_prime_in_interval (x h : ℝ) (hx : x > 2010759.9) :
+  HasPrimeInInterval x (x/15697) := by sorry
+
 
 @[blueprint
   "thm:ramare-saouter2003"

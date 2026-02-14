@@ -59,14 +59,14 @@ theorem conv_lambda_sq_larger_sum (f : ℕ → ℕ → ℕ → ℝ) (n : ℕ) :
   exact ⟨Nat.dvd_lcm_left d1 d2, Nat.dvd_lcm_right d1 d2, rfl⟩
 
 theorem moebius_inv_dvd_lower_bound (l m : ℕ) (hm : Squarefree m) :
-    (∑ d ∈ m.divisors, if l ∣ d then (μ d:ℤ) else 0) = if l = m then (μ l:ℤ) else 0 := by
+    (∑ d ∈ m.divisors, if l ∣ d then (moebius d:ℤ) else 0) = if l = m then (moebius l:ℤ) else 0 := by
   have hm_pos : 0 < m := Nat.pos_of_ne_zero hm.ne_zero
   revert hm
   revert m
   apply (ArithmeticFunction.sum_eq_iff_sum_smul_moebius_eq_on
     {n | Squarefree n} (fun _ _ => Squarefree.squarefree_of_dvd)).mpr
   intro m hm_pos hm
-  rw [sum_divisorsAntidiagonal' (f:= fun x y => μ x • if l=y then μ l else 0)]--
+  rw [sum_divisorsAntidiagonal' (f:= fun x y => moebius x • if l=y then moebius l else 0)]--
   by_cases hl : l ∣ m
   · rw [if_pos hl, sum_eq_single l]
     · have hmul : m / l * l = m := Nat.div_mul_cancel hl
@@ -82,14 +82,14 @@ theorem moebius_inv_dvd_lower_bound (l m : ℕ) (hm : Squarefree m) :
 
 
 theorem moebius_inv_dvd_lower_bound' {P : ℕ} (hP : Squarefree P) (l m : ℕ) (hm : m ∣ P) :
-    (∑ d ∈ P.divisors, if l ∣ d ∧ d ∣ m then μ d else 0) = if l = m then μ l else 0 := by
+    (∑ d ∈ P.divisors, if l ∣ d ∧ d ∣ m then moebius d else 0) = if l = m then moebius l else 0 := by
   rw [←moebius_inv_dvd_lower_bound _ _ (Squarefree.squarefree_of_dvd hm hP),
     sum_over_dvd_ite hP.ne_zero hm]
   simp_rw[ite_and, ←sum_filter, filter_comm]
 
 theorem moebius_inv_dvd_lower_bound_real {P : ℕ} (hP : Squarefree P) (l m : ℕ) (hm : m ∣ P) :
-    (∑ d ∈ P.divisors, if l ∣ d ∧ d ∣ m then (μ d : ℝ) else 0) =
-      if l = m then (μ l : ℝ) else 0 := by
+    (∑ d ∈ P.divisors, if l ∣ d ∧ d ∣ m then (moebius d : ℝ) else 0) =
+      if l = m then (moebius l : ℝ) else 0 := by
   norm_cast
   apply moebius_inv_dvd_lower_bound' hP l m hm
 

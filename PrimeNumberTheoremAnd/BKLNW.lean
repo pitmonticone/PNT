@@ -85,6 +85,7 @@ theorem lemma_11a (I : Pre_inputs) {x : ℝ} (hx : x > 0) : θ x ≤ (1 + I.ε (
   · grw [I.hx₁' x ⟨hx, h⟩, ← I.epsilon_nonneg (Real.log_nonneg hx₁_pos), add_zero, one_mul]
   · grw [add_mul, theta_le_psi, ← I.hε _ (Real.log_nonneg hx₁_pos)] <;> grind [exp_log]
 
+
 @[blueprint
   "bklnw-lemma-11b"
   (title := "BKLNW Lemma 11b")

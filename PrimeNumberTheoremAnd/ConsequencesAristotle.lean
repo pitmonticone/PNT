@@ -3,7 +3,7 @@ import PrimeNumberTheoremAnd.Mathlib.Analysis.SpecialFunctions.Log.BasicAristotl
 import PrimeNumberTheoremAnd.DefsAristotle
 import PrimeNumberTheoremAnd.WienerAristotle
 
-set_option lang.lemmaCmd true
+-- set_option lang.lemmaCmd true
 
 open ArithmeticFunction hiding log
 open Nat hiding log
@@ -347,7 +347,7 @@ From M\"obius inversion $1_{n=1} = \sum_{d|n} \mu(d)$ and summing we have
     $$ 1 ≥ x \sum_{d \leq x} \frac{\mu(d)}{d} - (x - 1)$$
     and the claim follows.
 -/
-theorem sum_mobius_div_self_le (N : ℕ) : |∑ n ∈ range N, μ n / (n : ℚ)| ≤ 1 := by
+theorem sum_mobius_div_self_le (N : ℕ) : |∑ n ∈ range N, moebius n / (n : ℚ)| ≤ 1 := by
   admit
 
 lemma sum_mobius_mul_floor (x : ℝ) (hx : 1 ≤ x) :
@@ -355,25 +355,25 @@ lemma sum_mobius_mul_floor (x : ℝ) (hx : 1 ≤ x) :
   admit
 
 noncomputable def mu_log : ArithmeticFunction ℝ :=
-    ⟨(fun n ↦ μ n * ArithmeticFunction.log n), (by admit)⟩
+    ⟨(fun n ↦ moebius n * ArithmeticFunction.log n), (by admit)⟩
 
-lemma mu_log_apply (n : ℕ) : mu_log n = μ n * ArithmeticFunction.log n := by
+lemma mu_log_apply (n : ℕ) : mu_log n = moebius n * ArithmeticFunction.log n := by
   admit
 
 lemma mu_log_mul_zeta : mu_log * ArithmeticFunction.zeta = -Λ := by
   admit
 
-lemma mu_log_eq_mu_mul_neg_lambda : mu_log = μ * -Λ := by
+lemma mu_log_eq_mu_mul_neg_lambda : mu_log = moebius * -Λ := by
   admit
 
 lemma ArithmeticFunction.neg_apply {R : Type*} [NegZeroClass R] {f : ArithmeticFunction R} {n : ℕ}
     : (-f) n = -f n := by
   admit
 
-lemma sum_mu_Lambda (x : ℝ) : ∑ n ∈ Iic ⌊x⌋₊, (μ n : ℝ) * log n = - ∑ k ∈ Iic ⌊x⌋₊, (μ k : ℝ) * Psi (x/k) := by
+lemma sum_mu_Lambda (x : ℝ) : ∑ n ∈ Iic ⌊x⌋₊, (moebius n : ℝ) * log n = - ∑ k ∈ Iic ⌊x⌋₊, (moebius k : ℝ) * Psi (x/k) := by
   admit
 
-lemma M_log_identity (x : ℝ) (hx : 1 ≤ x) : M x * log x = ∑ k ∈ Iic ⌊x⌋₊, (μ k : ℝ) * (log (x/k) - Psi (x/k)) := by
+lemma M_log_identity (x : ℝ) (hx : 1 ≤ x) : M x * log x = ∑ k ∈ Iic ⌊x⌋₊, (moebius k : ℝ) * (log (x/k) - Psi (x/k)) := by
   admit
 
 noncomputable def R (x : ℝ) : ℝ := Psi x - x
@@ -381,7 +381,7 @@ noncomputable def R (x : ℝ) : ℝ := Psi x - x
 lemma R_isLittleO : R =o[atTop] id := by
   admit
 
-lemma sum_mobius_div_isBigO : (fun x : ℝ => ∑ k ∈ Iic ⌊x⌋₊, (μ k : ℝ) * (x / k)) =O[atTop] id := by
+lemma sum_mobius_div_isBigO : (fun x : ℝ => ∑ k ∈ Iic ⌊x⌋₊, (moebius k : ℝ) * (x / k)) =O[atTop] id := by
   admit
 
 lemma sum_log_div_isBigO : (fun x : ℝ => ∑ k ∈ Iic ⌊x⌋₊, log (x / k)) =O[atTop] id := by
@@ -435,19 +435,19 @@ From the Dirichlet convolution identity
   $$ \sum_{n \leq x} \mu(n) = O(\eps x) + O_\eps(\frac{x}{\log x}).$$
   Sending $\eps \to 0$ we obtain the claim.
 -/
-theorem mu_pnt : (fun x : ℝ ↦ ∑ n ∈ range ⌊x⌋₊, μ n) =o[atTop] fun x ↦ x := by
+theorem mu_pnt : (fun x : ℝ ↦ ∑ n ∈ range ⌊x⌋₊, moebius n) =o[atTop] fun x ↦ x := by
   admit
 
 lemma lambda_eq_sum_sq_dvd_mu (n : ℕ) (hn : n ≠ 0) :
-    ((-1 : ℝ) ^ (Ω n)) = ∑ d ∈ (Icc 1 n).filter (fun d => d^2 ∣ n), (μ (n / d^2) : ℝ) := by
+    ((-1 : ℝ) ^ (cardFactors n)) = ∑ d ∈ (Icc 1 n).filter (fun d => d^2 ∣ n), (moebius (n / d^2) : ℝ) := by
   admit
 
 lemma sum_lambda_eq_sum_mu_div_sq (N : ℕ) :
-    ∑ n ∈ Finset.Icc 1 N, ((-1 : ℝ) ^ (Ω n)) =
-    ∑ d ∈ Finset.Icc 1 (Nat.sqrt N), ∑ k ∈ Finset.Icc 1 (N / d^2), (μ k : ℝ) := by
+    ∑ n ∈ Finset.Icc 1 N, ((-1 : ℝ) ^ (cardFactors n)) =
+    ∑ d ∈ Finset.Icc 1 (Nat.sqrt N), ∑ k ∈ Finset.Icc 1 (N / d^2), (moebius k : ℝ) := by
   admit
 
-lemma sum_mu_div_sq_isLittleO : (fun N : ℕ ↦ ∑ d ∈ Finset.Icc 1 (Nat.sqrt N), ∑ k ∈ Finset.Icc 1 (N / d^2), (μ k : ℝ)) =o[atTop] (fun N ↦ (N : ℝ)) := by
+lemma sum_mu_div_sq_isLittleO : (fun N : ℕ ↦ ∑ d ∈ Finset.Icc 1 (Nat.sqrt N), ∑ k ∈ Finset.Icc 1 (N / d^2), (moebius k : ℝ)) =o[atTop] (fun N ↦ (N : ℝ)) := by
   admit
 
 /-- We have $\sum_{n \leq x} \lambda(n) = o(x)$.
@@ -463,18 +463,18 @@ From the identity
   $$ \sum_{n \leq x} \lambda(n) = O(\eps x) + O_\eps(x^{1/2}).$$
   Sending $\eps \to 0$ we obtain the claim.
 -/
-theorem lambda_pnt : (fun x : ℝ ↦ ∑ n ∈ range ⌊x⌋₊, (-1)^(Ω n)) =o[atTop] fun x ↦ x := by
+theorem lambda_pnt : (fun x : ℝ ↦ ∑ n ∈ range ⌊x⌋₊, (-1)^(cardFactors n)) =o[atTop] fun x ↦ x := by
   admit
 
-lemma sum_mobius_floor (x : ℝ) (hx : 1 ≤ x) : ∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * ⌊x / n⌋ = 1 := by
+lemma sum_mobius_floor (x : ℝ) (hx : 1 ≤ x) : ∑ n ∈ Icc 1 ⌊x⌋₊, (moebius n : ℝ) * ⌊x / n⌋ = 1 := by
   admit
 
 lemma sum_mobius_floor_tail_isLittleO (K : ℕ) (hK : 0 < K) :
-    (fun x : ℝ => ∑ n ∈ Finset.Ioc ⌊x/K⌋₊ ⌊x⌋₊, (μ n : ℝ) * (⌊x / (n : ℝ)⌋ : ℝ)) =o[atTop] fun x => x := by
+    (fun x : ℝ => ∑ n ∈ Finset.Ioc ⌊x/K⌋₊ ⌊x⌋₊, (moebius n : ℝ) * (⌊x / (n : ℝ)⌋ : ℝ)) =o[atTop] fun x => x := by
   admit
 
 lemma sum_mobius_div_approx (x : ℝ) (K : ℕ) (hK : 0 < K) (hx : 1 ≤ x) :
-  |x * (∑ n ∈ Icc 1 ⌊x/K⌋₊, (μ n : ℝ) / n) - 1| ≤ x/K + |∑ n ∈ Ioc ⌊x/K⌋₊ ⌊x⌋₊, (μ n : ℝ) * (⌊x / (n : ℝ)⌋ : ℝ)| := by
+  |x * (∑ n ∈ Icc 1 ⌊x/K⌋₊, (moebius n : ℝ) / n) - 1| ≤ x/K + |∑ n ∈ Ioc ⌊x/K⌋₊ ⌊x⌋₊, (moebius n : ℝ) * (⌊x / (n : ℝ)⌋ : ℝ)| := by
   admit
 
 /-- We have $\sum_{n \leq x} \mu(n)/n = o(1)$.
@@ -500,7 +500,7 @@ As in the proof of Theorem \ref{mun}, we have
   for all $j=1,\dots,N-1$ if $x$ is large enough depending on $N$.
   Summing all the bounds, we obtain the claim.
 -/
-theorem mu_pnt_alt : (fun x : ℝ ↦ ∑ n ∈ range ⌊x⌋₊, (μ n : ℝ) / n) =o[atTop] fun _ ↦ (1 : ℝ) := by
+theorem mu_pnt_alt : (fun x : ℝ ↦ ∑ n ∈ range ⌊x⌋₊, (moebius n : ℝ) / n) =o[atTop] fun _ ↦ (1 : ℝ) := by
   admit
 
 /-!

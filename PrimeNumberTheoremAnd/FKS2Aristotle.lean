@@ -158,6 +158,12 @@ theorem proposition_13
   (hB : B > C ^ 2 / (8 * R)) :
   Eθ.classicalBound (Aψ * (1 + ν_asymp Aψ B C R x₀)) B C R x₀ := by sorry
 
+
+lemma corollary_14_small_adm :
+    ∀ {x : ℝ}, 2 ≤ x → x ≤ Real.exp 30 →
+    (1:ℝ) ≤ admissible_bound 121.0961 (3/2) 2 5.5666305 x := by
+  admit
+
 /-- **FKS2 Corollary 14**
 
 We have an admissible bound for $E_\theta$ with $A = 121.0961$, $B=3/2$, $C=2$,
@@ -166,7 +172,8 @@ We have an admissible bound for $E_\theta$ with $A = 121.0961$, $B=3/2$, $C=2$,
 PROVIDED SOLUTION:
 By Corollary \ref{fks_cor_13}, with $R = 5.5666305$, and using the admissible asymptotic bound for $E_\psi(x)$ with $A_\psi = 121.096$, $B = 3/2$, $C = 2$, for all $x \geq x_0 = e^{30}$, we can obtain $\nu_{asymp}(x_0) \leq 6.3376 \cdot 10^{-7}$, from which one can conclude an admissible asymptotic bound for $E_\theta(x)$ with $A_\theta = 121.0961$, $B = 3/2$, $C = 2$, for all $x \geq x_0 = e^{30}$. Additionally, the minimum value of $\varepsilon_{\theta,asymp}(x)$ for $2 \leq x \leq e^{30}$ is roughly $2.6271\ldots$ at $x=2$. The results found in [reference] give $E_\theta(x) \leq 1 < \varepsilon_{\theta,asymp}(2) \leq \varepsilon_{\theta,asymp}(x)$ for all $2 \leq x \leq e^{30}$.
 -/
-theorem corollary_14 : Eθ.classicalBound 121.0961 (3/2) 2 5.5666305 2 := sorry
+theorem corollary_14 : Eθ.classicalBound 121.0961 (3/2) 2 5.5666305 2 := by
+  admit
 
 /-- **FKS2 Remark 15**
 

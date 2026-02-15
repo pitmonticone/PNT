@@ -1,5 +1,4 @@
 import Mathlib
-import PrimeNumberTheoremAnd.LogTablesAristotle
 import PrimeNumberTheoremAnd.MellinCalculusAristotle
 import PrimeNumberTheoremAnd.ZetaBoundsAristotle
 import PrimeNumberTheoremAnd.ZetaConjAristotle

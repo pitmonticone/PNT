@@ -401,8 +401,7 @@ theorem lemma_aachfour (s : ℂ) (hsigma : 0 ≤ s.re) (ν : ℝ) (hν : ν ≠ 
     ∃ E, ∫ t in Set.Icc a b, t ^ (-s) * e (ν * t) = Φ b - Φ a +
       ((a ^ (-s.re - 1) : ℝ) / (2 * π ^ 2)) * E ∧
       ‖E‖ ≤ s.re / (|ν - ϑ| ^ 2) + |ϑ| / (|ν - ϑ| ^ 3) := by
-  sorry
-
+  admit
 
 def _root_.Real.IsHalfInteger (x : ℝ) : Prop := ∃ k : ℤ, x = k + 1 / 2
 
@@ -600,7 +599,7 @@ theorem lemma_abadusepoisson {a b : ℝ} (ha : ¬∃ n : ℤ, a = n) (hb : ¬∃
       if a ≤ y ∧ y ≤ b then (y ^ (-s.re) : ℝ) * e (-(s.im / (2 * π)) * Real.log y) else 0
     ∃ L : ℂ, Filter.atTop.Tendsto
       (fun (N : ℕ) ↦ ∑ n ∈ Ioc 1 N,
-        (Real.fourierIntegral f n + Real.fourierIntegral f (-n))) (nhds L) ∧
+        (FourierTransform.fourier f n + FourierTransform.fourier f (-n))) (nhds L) ∧
       ∑ n ∈ Ioc ⌊a⌋₊ ⌊b⌋₊, (n : ℂ) ^ (-s) =
         ((b ^ (1 - s) : ℂ) - (a ^ (1 - s) : ℂ)) / (1 - s) + L := by
   sorry
@@ -823,7 +822,7 @@ theorem lemma_abadsumas {s : ℂ} (hs1 : s ≠ 1) (hsigma : 0 ≤ s.re) {a b : �
           |ϑ| / (2 * π ^ 2) * ((1 / ((1 - |ϑ|) ^ 3 : ℝ)) + 2 * (riemannZeta 3).re - 1)
       else
         s.re / 6
-    ∃ E : ℂ, ∑' n : ℕ, (Real.fourierIntegral f (n + 1) + Real.fourierIntegral f (-(n + 1 : ℤ))) =
+    ∃ E : ℂ, ∑' n : ℕ, (FourierTransform.fourier f (n + 1) + FourierTransform.fourier f (-(n + 1 : ℤ))) =
       ((a ^ (-s) : ℂ) * g ϑ) / (2 * I) - ((b ^ (-s) : ℂ) * g ϑ_minus) / (2 * I) + E ∧
       ‖E‖ ≤ C / a ^ (s.re + 1) := by
   sorry

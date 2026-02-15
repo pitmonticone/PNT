@@ -582,7 +582,7 @@ Let \(n \ge X_0^2\). Then there exist primes \(q_1 < q_2 < q_3\) with
   for \(i = 1,2,3\), and \(q_1 < q_2 < q_3 < n\).
 
 PROVIDED SOLUTION:
-Apply Theorem~\ref{thm:Dusart} with suitable values of \(x\) slightly below \(n\),
+Apply Theorem~\ref{Dusart_prop_5_4} with suitable values of \(x\) slightly below \(n\),
   e.g.\ \(x = n(1+1/\log^3\sqrt{n})^{-i}\), again keeping track of the intervals.  For \(n\) large
   enough, these intervals lie in \((\sqrt{n},n)\) and contain primes \(q_i\) with the desired
   ordering.

@@ -40,7 +40,7 @@ theorem prop_2_3_1 {a : ℕ → ℂ} {T β : ℝ} (hT : 0 < T) (hβ : 1 < β)
     (hφ_supp : ∀ x, x ∉ Set.Icc (-1) 1 → φ x = 0) -- this hypothesis may be unnecessary
     (hφ_Fourier : ∃ C : ℝ, ∀ y : ℝ, y ≠ 0 → ‖𝓕 φ y‖ ≤ C / |y| ^ β)
     (x s : ℝ) (hx : 0 < x) (hs : 1 < s) :
-    (1 / (2 * π)) * ∑' n, a n * (x / (n ^ s : ℝ)) * 𝓕 φ ((T / (2 * π)) * log (n / x)) =
+    (1 / (2 * π)) * ∑' (n : ℕ+), a n * (x / (n ^ s : ℝ)) * 𝓕 φ ((T / (2 * π)) * log (n / x)) =
       (1 / (2 * π * T)) *
         ∫ t in Set.Icc (-T) T, φ (t/T) * G (s + t * I) * x ^ (t * I) +
       (∫ y in Set.Iic (-T * log x / (2 * π)), rexp (-y * (s - 1)) * 𝓕 φ y) * (x ^ (2 - s) / T : ℝ) := by
@@ -62,7 +62,7 @@ theorem prop_2_3 {a : ℕ → ℂ} {T β : ℝ} (hT : 0 < T) (hβ : 1 < β)
     (hφ_supp : ∀ x, x ∉ Set.Icc (-1) 1 → φ x = 0)
     (hφ_Fourier : ∃ C : ℝ, ∀ y : ℝ, y ≠ 0 → ‖𝓕 φ y‖ ≤ C / |y| ^ β)
     (x : ℝ) (hx : 0 < x) :
-    (1 / (2 * π)) * ∑' n, a n * (x / n) * 𝓕 φ ((T / (2 * π)) * log (n / x)) =
+    (1 / (2 * π)) * ∑' (n : ℕ+), a n * (x / n) * 𝓕 φ ((T / (2 * π)) * log (n / x)) =
       (1 / (2 * π * T)) *
         ∫ t in Set.Icc (-T) T, φ (t/T) * G (1 + t * I) * x ^ (1 + t * I) +
       (φ 0 - ∫ y in Set.Iic (-T * log x / (2 * π)), 𝓕 φ y) * (x / T) := by
@@ -93,7 +93,7 @@ theorem S_eq_I (a : ℕ → ℝ) (s x T : ℝ) (hs : s ≠ 1) (hT : 0 < T)
     : -- may need a summability hypothesis on a
     let lambda := (2 * π * (s - 1)) / T
     S a s x =
-      (x ^ (-s):ℝ) * ∑' n, a n * (x / (n ^ s : ℝ)) * I' lambda ((T / (2 * π)) * log (n / x)) := by
+      (x ^ (-s):ℝ) * ∑' (n : ℕ+), a n * (x / (n ^ s : ℝ)) * I' lambda ((T / (2 * π)) * log (n / x)) := by
       sorry
 
 /-- **CH2 Proposition 2.4, upper bound**
@@ -143,7 +143,7 @@ Similar to the proof of Proposition \ref{ch2-prop-2-4-plus}; see [reference] for
 theorem prop_2_4_minus {a : ℕ → ℝ} (ha_pos : ∀ n, a n ≥ 0) {T β : ℝ} (hT : 0 < T) (hβ : 1 < β)
     (ha : Summable (fun n ↦ ‖a n‖ / (n * log n ^ β)))
     {G : ℂ → ℂ} (hG : ContinuousOn G { z | z.re ≥ 1 ∧ z.im ∈ Set.Icc (-T) T })
-    (hG' : Set.EqOn G (fun s ↦ ∑' n, a n / (n ^ s : ℂ) - 1 / (s - 1)) { z | z.re > 1 })
+    (hG' : Set.EqOn G (fun s ↦ ∑' (n : ℕ+), a n / (n ^ s : ℂ) - 1 / (s - 1)) { z | z.re > 1 })
     {φ_minus : ℝ → ℂ} (hφ_mes : Measurable φ_minus) (hφ_int : Integrable φ_minus)
     (hφ_supp : ∀ x, x ∉ Set.Icc (-1) 1 → φ_minus x = 0)
     (hφ_Fourier : ∃ C : ℝ, ∀ y : ℝ, y ≠ 0 → ‖𝓕 φ_minus y‖ ≤ C / |y| ^ β)
@@ -206,7 +206,8 @@ $\varphi_{\pm, \lambda}$ is absolutely integrable.
 PROVIDED SOLUTION:
 Straightforward estimation
 -/
-theorem ϕ_integrable (lambda ε : ℝ) (hlam : lambda ≠ 0) : Integrable (ϕ lambda ε) := by sorry
+theorem ϕ_integrable (lambda ε : ℝ) (hlam : lambda ≠ 0) : Integrable (ϕ lambda ε) := by
+  admit
 
 /-- **phi is absolutely continuous**
 
@@ -238,7 +239,16 @@ $F$ is absolutely integrable.
 PROVIDED SOLUTION:
 Use Lemma \ref{decay-alt}.
 -/
-theorem F_integrable (lambda ε : ℝ) (hlam : lambda ≠ 0) : Integrable (F lambda ε) := by sorry
+theorem F_integrable (lambda ε : ℝ) (hlam : lambda ≠ 0) : Integrable (F lambda ε) := by
+  admit
+
+lemma Phi_circ_neg_conj (ν ε : ℝ) (s : ℝ) :
+    Phi_circ ν ε (-↑s : ℂ) = starRingEnd ℂ (Phi_circ ν ε (↑s : ℂ)) := by
+  admit
+
+lemma Phi_star_neg_conj (ν ε : ℝ) (s : ℝ) :
+    Phi_star ν ε (-↑s : ℂ) = -starRingEnd ℂ (Phi_star ν ε (↑s : ℂ)) := by
+  admit
 
 /-- **F real**
 
@@ -247,7 +257,8 @@ $F_{\pm,\lambda}$ is real-valued.
 PROVIDED SOLUTION:
 Follows from the symmetry of $\phi$.
 -/
-theorem F.real (lambda ε y : ℝ) : (𝓕 (ϕ lambda ε) y).im = 0 := by sorry
+theorem F.real (lambda ε y : ℝ) : (𝓕 (ϕ lambda ε) y).im = 0 := by
+  admit
 
 /-- **F+ majorizes I**
 
@@ -269,20 +280,37 @@ TODO.
 theorem F.minus_minorizes_I (lambda y : ℝ) (hlam : lambda ≠ 0) :
     F lambda (-1) y ≤ I' lambda y := by sorry
 
+
+lemma I_prime_integral (lambda : ℝ) (hlam : lambda ≠ 0) :
+    ∫ y, I' lambda y = 1 / |lambda| := by
+  admit
+
+lemma phi_zero_val (lambda : ℝ) (hlam : lambda ≠ 0) :
+    (ϕ lambda 1 0).re = 1 / (1 - Real.exp (-|lambda|)) := by
+  admit
+
+lemma I_prime_integrable (lambda : ℝ) (hlam : lambda ≠ 0) :
+    MeasureTheory.Integrable (I' lambda) := by
+  admit
+
+lemma integral_F_eq_phi_zero (lambda : ℝ) (hlam : lambda ≠ 0) :
+    ∫ y, F lambda 1 y = (ϕ lambda 1 0).re := by
+  admit
+
 /-- **F+ L1 bound**
 
-$\int (F_{+,\lambda}(y)-I_\lambda(y))\ dy = \frac{1}{1-e^{-|\lambda|}} - \frac{1}{|\lambda|}$.
+$\int (F_{+,\lambda}(y)-I_\lambda(y))\ dy = \frac{1}{1-e^{-|\lambda|}} - \frac{1}{|\lambda|}$. (cf. [reference])
 
 PROVIDED SOLUTION:
 This should follow from the Fourier inversion formula, after showing $F_{+,\lambda}$ is in $L^1$..
 -/
-theorem F.plus_l1 (lambda y : ℝ) (hlam : lambda ≠ 0) :
-    ∫ y : ℝ, F lambda 1 y - I' lambda y =
-      1 / (1 - rexp (-|lambda|)) - 1 / |lambda| := by sorry
+theorem F.plus_l1 (lambda : ℝ) (hlam : lambda ≠ 0) :
+    ∫ y : ℝ, F lambda 1 y - I' lambda y = 1 / (1 - rexp (-|lambda|)) - 1 / |lambda| := by
+  admit
 
 /-- **F- L1 bound**
 
-$\int (I_\lambda(y) - F_{-,\lambda}(y))\ dy = \frac{1}{|\lambda|} - \frac{1}{e^{|\lambda|} - 1}$.
+$\int (I_\lambda(y) - F_{-,\lambda}(y))\ dy = \frac{1}{|\lambda|} - \frac{1}{e^{|\lambda|} - 1}$. (cf. [reference])
 
 PROVIDED SOLUTION:
 This should follow from the Fourier inversion formula, after showing $F_{-,\lambda}$ is in $L^1$..
@@ -333,46 +361,44 @@ TBD.
 -/
 theorem cor_1_2_a {T x : ℝ} (hT : 1e7 ≤ T) (RH : riemannZeta.RH_up_to T) (hx : max T 1e9 < x) :
     |ψ x - x * π * T * (coth (π * T)).re| ≤
-      π * T⁻¹ * x + (1 / (2 * π)) * log (T / (2 * π)) ^ 2 - (1 / (6 * π)) * log (T / (2 * π)) * sqrt x := by sorry
+      π * T⁻¹ * x + (1 / (2 * π)) * log (T / (2 * π)) ^ 2 - (1 / (6 * π)) * log (T / (2 * π)) * Real.sqrt x := by sorry
 
 /-- **Corollary 1.2, part b**
 
 Assume the Riemann hypothesis holds up to height $T \geq 10^7$. For $x > \max(T,10^9)$,
-$$\sum_{n \leq x} \frac{\Lambda(n)}{n^{-(\log x - \gamma)}} \leq \pi \sqrt{T}^{-1} + \frac{1}{2\pi} \log^2(T/(2\pi)) - \frac{1}{6\pi} \log(T/(2\pi)) \frac{1}{x},$$
+$$\sum_{n \leq x} \frac{\Lambda(n)}{n} \leq \pi \sqrt{T}^{-1} + \frac{1}{2\pi} \log^2(T/(2\pi)) - \frac{1}{6\pi} \log(T/(2\pi)) \frac{1}{x},$$
 where $\gamma = 0.577215...$ is Euler’s constant.
 
 PROVIDED SOLUTION:
 TBD.
 -/
 theorem cor_1_2_b {T x : ℝ} (hT : 1e7 ≤ T) (RH : riemannZeta.RH_up_to T) (hx : max T 1e9 < x) :
-    ∑ n ∈ Finset.Iic (⌊x⌋₊), Λ n / (n:ℝ) ^ (-(log x - eulerMascheroniConstant)) ≤
-      π * sqrt T⁻¹ + (1 / (2 * π)) * log (T / (2 * π)) ^ 2 - (1 / (6 * π)) * log (T / (2 * π)) / x := by sorry
+    ∑ n ∈ Finset.Iic (⌊x⌋₊), Λ n / n ≤
+      π * Real.sqrt T⁻¹ + (1 / (2 * π)) * log (T / (2 * π)) ^ 2 - (1 / (6 * π)) * log (T / (2 * π)) / x := by sorry
 
-
-/- Corollary 1.3. For any x ≥ 1, |ψ(x) − x| ≤ π 3 · 1012 · x +113.67√x, n≤x Λ(n) n =logx−γ+O∗ π √ 3 · 1012 + 113.67 x . -/
 /-- **Corollary 1.3, part a**
 
 For $x \geq 1$,
-$$|\psi(x) - x| \leq \pi \cdot 3 \cdot 10^{12} \cdot x + 113.67 \sqrt{x},$$
+$$|\psi(x) - x| \leq \pi \cdot 3 \cdot 10^{-12} \cdot x + 113.67 \sqrt{x},$$
 where $\psi(x)$ is the Chebyshev function.
 
 PROVIDED SOLUTION:
 TBD.
 -/
 theorem cor_1_3_a (x : ℝ) (hx : 1 ≤ x) :
-    |ψ x - x| ≤ π * 3 * 10 ^ 12 * x + 113.67 * sqrt x := by sorry
+    |ψ x - x| ≤ π * 3 * 10 ^ (-12 : ℝ) * x + 113.67 * Real.sqrt x := by sorry
 
 /-- **Corollary 1.3, part b**
 
 For $x \geq 1$,
-$$ \sum_{n \leq x} \frac{\Lambda(n)}{n^{-(\log x - \gamma)}} = \log x - \gamma + O^*(\pi \cdot \sqrt{3} \cdot 10^{12} + 113.67 / x).$$
+$$ \sum_{n \leq x} \frac{\Lambda(n)}{n} = \log x - \gamma + O^*(\pi \cdot \sqrt{3} \cdot 10^{-12} + 113.67 / x).$$
 
 PROVIDED SOLUTION:
 TBD.
 -/
 theorem cor_1_3_b (x : ℝ) (hx : 1 ≤ x) : ∃ E,
-    ∑ n ∈ Finset.Iic (⌊x⌋₊), Λ n / (n:ℝ) ^ (-(log x - eulerMascheroniConstant)) =
-      log x - eulerMascheroniConstant + E ∧ |E| ≤ π * sqrt 3 * 10 ^ 12 + 113.67 / x := by sorry
+    ∑ n ∈ Finset.Iic (⌊x⌋₊), Λ n / n =
+      log x - eulerMascheroniConstant + E ∧ |E| ≤ π * Real.sqrt 3 * 10 ^ (-12 : ℝ) + 113.67 / x := by sorry
 
 
 end CH2

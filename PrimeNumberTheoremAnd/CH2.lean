@@ -1,10 +1,16 @@
-import Mathlib.Algebra.Lie.OfAssociative
+import Mathlib.Algebra.Order.Ring.Star
 import Mathlib.Analysis.CStarAlgebra.Classes
+import Mathlib.Data.Int.Star
+import Mathlib.Data.PNat.Interval
+import Mathlib.Data.Real.CompleteField
 import Mathlib.Data.Real.Sign
 import Mathlib.Data.Real.StarOrdered
 import Mathlib.MeasureTheory.Integral.Gamma
+import Mathlib.RingTheory.SimpleRing.Principal
 import PrimeNumberTheoremAnd.PrimaryDefinitions
 import PrimeNumberTheoremAnd.Wiener
+
+open Real
 
 blueprint_comment /--
 \section{Chirre-Helfgott's estimates for sums of nonnegative arithmetic functions}\label{ch2-sec}
@@ -104,12 +110,79 @@ noncomputable def I' (lambda u : ℝ) : ℝ := -- use I' instead of I to avoid c
   (proof := /-- Routine manipulation. -/)
   (latexEnv := "sublemma")
   (discussion := 881)]
-theorem S_eq_I (a : ℕ → ℝ) (σ x T : ℝ) (hσ : σ ≠ 1) (hT : 0 < T)
-    : -- may need a summability hypothesis on a
-    let lambda := (2 * π * (σ - 1)) / T
-    S a σ x =
-      (x ^ (-σ):ℝ) * ∑' (n : ℕ+), a n * (x / (n ^ σ : ℝ)) * I' lambda ((T / (2 * π)) * log (n / x)) := by
-      sorry
+theorem S_eq_I (a : ℕ → ℝ) (s x T : ℝ) (hs : s ≠ 1) (hT : 0 < T) (hx : 0 < x) :
+    let lambda := (2 * π * (s - 1)) / T
+    S a s x = (x ^ (-s) : ℝ) * ∑' (n : ℕ+), a n * (x / n) * I' lambda ((T / (2 * π)) * log (n / x)) := by
+  have lambda_mul_u {s T : ℝ} (hT : 0 < T) (u : ℝ) :
+      2 * π * (s - 1) / T * (T / (2 * π) * u) = (s - 1) * u := by field_simp [pi_ne_zero]
+  by_cases hs_lt : s < 1
+  · have hS_def : S a s x = ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n / (n ^ s : ℝ) := if_pos hs_lt
+    have h_tsum_eq : x ^ (-s : ℝ) * ∑' n : ℕ+,
+        a n * (x / n) * I' (2 * π * (s - 1) / T) ((T / (2 * π)) * log (n / x)) =
+        x ^ (-s : ℝ) * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n * (x / n) * (x / n) ^ (s - 1) := by
+      have h_cond : x ^ (-s : ℝ) * ∑' n : ℕ+, a n * (x / n) * I' (2 * π * (s - 1) / T)
+            ((T / (2 * π)) * log (n / x)) =
+          x ^ (-s : ℝ) * ∑' n : ℕ+, if n ≤ ⌊x⌋₊ then a n * (x / n) * (x / n) ^ (s - 1) else 0 := by
+        congr 1; congr 1 with n; unfold I'
+        have hn_pos : (0 : ℝ) < n := Nat.cast_pos.mpr n.pos
+        simp only [lambda_mul_u hT]
+        split_ifs with h1 h2 h3
+        · congr 1; rw [rpow_def_of_pos (div_pos hx hn_pos),
+            show log (x / n) = log x - log n from log_div hx.ne' hn_pos.ne']
+          congr 1; rw [show log (n / x) = log n - log x from
+            log_div hn_pos.ne' hx.ne']
+          field_simp [hT.ne']; ring
+        · exact absurd h1 (not_le.mpr (mul_neg_of_neg_of_pos (sub_neg_of_lt hs_lt)
+            (log_pos (by rw [lt_div_iff₀ hx]; linarith [Nat.lt_of_floor_lt (not_le.mp h2)]))))
+        · exact absurd h1 (not_not.mpr (mul_nonneg_of_nonpos_of_nonpos (sub_neg_of_lt hs_lt).le
+            (log_nonpos (div_pos hn_pos hx).le
+              ((div_le_one hx).mpr (le_trans (Nat.cast_le.mpr h3) (Nat.floor_le hx.le))))))
+        · simp
+      rw [h_cond, tsum_eq_sum (s := Finset.Icc 1 ⟨⌊x⌋₊ + 1, Nat.succ_pos _⟩)]
+      · congr 1; rw [← Finset.sum_filter]; field_simp
+        refine Finset.sum_bij (fun n _ ↦ n) ?_ ?_ ?_ ?_
+        · simp only [Finset.mem_filter, Finset.mem_Icc, PNat.one_le, true_and, and_imp]
+          exact fun n hn₁ hn₂ ↦ ⟨PNat.one_le _, hn₂⟩
+        · exact fun _ _ _ _ h ↦ Subtype.val_injective h
+        · simp only [Finset.mem_Icc, Finset.mem_filter, PNat.one_le, true_and,
+            exists_prop, and_imp]
+          exact fun b hb₁ hb₂ ↦ ⟨⟨b, hb₁⟩, ⟨Nat.le_succ_of_le hb₂, hb₂⟩, rfl⟩
+        · simp only [Finset.mem_filter, Finset.mem_Icc, PNat.one_le, true_and,
+            mul_assoc, mul_comm, implies_true]
+      · simp +zetaDelta only [Finset.mem_Icc, PNat.one_le, true_and, not_le, ite_eq_right_iff,
+          mul_eq_zero, div_eq_zero_iff, Nat.cast_eq_zero, PNat.ne_zero, or_false] at *
+        exact fun n hn₁ hn₂ ↦ absurd (Nat.le_succ_of_le hn₂) (not_le_of_gt hn₁)
+    simp_all only [ne_eq, div_eq_mul_inv, rpow_neg hx.le, mul_left_comm, mul_comm,
+      mul_inv_rev, mul_assoc, Finset.mul_sum ..]
+    refine Finset.sum_congr rfl fun n hn ↦ ?_
+    have hn_pos : (0 : ℝ) < n := by norm_cast; linarith [Finset.mem_Icc.mp hn]
+    rw [mul_rpow (by positivity) (by positivity), inv_rpow (by positivity)]
+    ring_nf
+    rw [rpow_add hx, rpow_neg_one, rpow_add hn_pos, rpow_neg_one]
+    field_simp
+  · have hs_def : S a s x = ∑' n : ℕ, if n ≥ x then a n / (n ^ s : ℝ) else 0 := by simp_all [S]
+    have hs_ge : ∑' n : ℕ, (if n ≥ x then a n / (n ^ s : ℝ) else 0) =
+        ∑' n : ℕ+, (if (n : ℝ) ≥ x then a n / (n ^ s : ℝ) else 0) :=
+      (Subtype.val_injective.tsum_eq fun n hn ↦
+        ⟨⟨n, Nat.pos_of_ne_zero fun h ↦ by simp_all [Function.mem_support]⟩, rfl⟩).symm
+    have hs_factor : ∑' n : ℕ+, (if (n : ℝ) ≥ x then a n / (n ^ s : ℝ) else 0) =
+        x ^ (-s) * ∑' n : ℕ+, (if (n : ℝ) ≥ x then a n * (x / (n : ℝ)) * (x / (n : ℝ)) ^ (s - 1) else 0) := by
+      rw [← tsum_mul_left]; congr; ext n
+      split_ifs with h
+      · have hn : (0 : ℝ) < n := by positivity
+        rw [div_eq_mul_inv, div_rpow hx.le hn.le, rpow_sub_one hx.ne', rpow_sub_one hn.ne', rpow_neg hx.le]
+        field_simp
+      · simp
+    convert hs_factor using 3
+    · rw [hs_def, hs_ge]
+    · ext n; simp only [I', lambda_mul_u hT]
+      split_ifs <;> simp_all only [ne_eq, not_lt, ge_iff_le, Nat.cast_pos, PNat.pos,
+        rpow_def_of_pos, div_pos_iff_of_pos_left, not_le, mul_zero, mul_eq_mul_left_iff]
+      · exact Or.inl (by rw [show (n : ℝ) / x = (x / n)⁻¹ from (inv_div x n).symm, Real.log_inv]; field_simp)
+      · linarith [mul_neg_of_pos_of_neg (sub_pos.mpr <| lt_of_le_of_ne hs_lt (Ne.symm ‹_›))
+          (log_neg (by positivity : (0 : ℝ) < n / x) <| by rw [div_lt_one hx]; linarith)]
+      · linarith [mul_nonneg (sub_nonneg.mpr hs_lt)
+          (log_nonneg (by rw [le_div_iff₀ hx]; linarith : (1:ℝ) ≤ n / x))]
 
 @[blueprint
   "ch2-prop-2-4-plus"
@@ -274,8 +347,8 @@ theorem ϕ_integrable (lambda ε : ℝ) (hlam : lambda ≠ 0) : Integrable (ϕ l
               Real.sin_sq_add_cos_sq (-(2 * π * (lambda.sign * x)) / 2),
               sin_le_one (-(2 * π * (lambda.sign * x)) / 2),
               cos_le_one (-(2 * π * (lambda.sign * x)) / 2), exp_lt_exp.2 habs]
-        · norm_num [Complex.tanh_eq_sinh_div_cosh]
-          norm_num [Complex.ext_iff, Complex.sinh, Complex.cosh, Complex.exp_re, Complex.exp_im]
+        · norm_num [Complex.tanh_eq_sinh_div_cosh, Complex.ext_iff, Complex.sinh, Complex.cosh,
+            Complex.exp_re, Complex.exp_im]
           intro x hx₁ hx₂; constructor <;> intro h <;>
             nlinarith [exp_pos (|lambda| / 2), exp_pos (-(|lambda| / 2)),
               Real.sin_sq_add_cos_sq (-(2 * π * (lambda.sign * x)) / 2),
@@ -397,23 +470,21 @@ lemma Phi_star_neg_conj (ν ε : ℝ) (s : ℝ) :
   (latexEnv := "sublemma")
   (discussion := 946)]
 theorem F.real (lambda ε y : ℝ) : (𝓕 (ϕ lambda ε) y).im = 0 := by
-  have h_fourier_real : ∀ f : ℝ → ℂ, (∀ t, f (-t) = starRingEnd ℂ (f t)) → ∀ y, (𝓕 f y).im = 0 := by
-    intro f hf y
-    have h_fourier_real : 𝓕 f y = ∫ t, f t * Complex.exp (-2 * Real.pi * Complex.I * y * t) := by
-      simp only [Real.fourier_real_eq_integral_exp_smul, smul_eq_mul]
-      congr 1; ext t; rw [mul_comm]; congr 1; congr 1; push_cast; ring
-    have h_fourier_real : ∫ t, f t * Complex.exp (-2 * Real.pi * Complex.I * y * t) = ∫ t,
-        starRingEnd ℂ (f t) * Complex.exp (2 * Real.pi * Complex.I * y * t) := by
-      rw [← MeasureTheory.integral_neg_eq_self]; congr; ext; simp_all
-    have h_fourier_real : ∫ t, f t * Complex.exp (-2 * Real.pi * Complex.I * y * t) =
-        starRingEnd ℂ (∫ t, f t * Complex.exp (-2 * Real.pi * Complex.I * y * t)) := by
-      convert h_fourier_real using 1
-      rw [← integral_conj]; congr; ext; simp [Complex.ext_iff, Complex.exp_re, Complex.exp_im]
-    norm_num [Complex.ext_iff] at *; grind
-  apply h_fourier_real
-  intro t
-  simp only [ϕ, ϕ_pm, mul_neg, ofReal_neg, Real.sign_neg]
-  split_ifs with h1 h2 h3 <;> grind [conj_ofReal, Phi_circ_neg_conj, Phi_star_neg_conj]
+  suffices h : ∀ f : ℝ → ℂ, (∀ t, f (-t) = starRingEnd ℂ (f t)) → ∀ y, (𝓕 f y).im = 0 by
+    apply h; intro t; simp only [ϕ, ϕ_pm, mul_neg, ofReal_neg, Real.sign_neg]
+    split_ifs with h1 h2 h3 <;> grind [conj_ofReal, Phi_circ_neg_conj, Phi_star_neg_conj]
+  intro f hf y
+  have h1 : 𝓕 f y = ∫ t, f t * Complex.exp (-2 * π * I * y * t) := by
+    simp only [Real.fourier_real_eq_integral_exp_smul, smul_eq_mul]
+    congr 1; ext t; rw [mul_comm]; congr 1; congr 1; push_cast; ring
+  have h2 : ∫ t, f t * Complex.exp (-2 * π * I * y * t) = ∫ t,
+      starRingEnd ℂ (f t) * Complex.exp (2 * π * I * y * t) := by
+    rw [← MeasureTheory.integral_neg_eq_self]; congr; ext; simp_all
+  have h3 : ∫ t, f t * Complex.exp (-2 * π * I * y * t) =
+      starRingEnd ℂ (∫ t, f t * Complex.exp (-2 * π * I * y * t)) := by
+    convert h2 using 1
+    rw [← integral_conj]; congr; ext; simp [Complex.ext_iff, Complex.exp_re, Complex.exp_im]
+  norm_num [Complex.ext_iff] at h1 h2 h3 ⊢; grind
 
 @[blueprint
   "F-maj"
@@ -430,7 +501,7 @@ theorem F.plus_majorizes_I (lambda y : ℝ) (hlam : lambda ≠ 0) :
   "F-min"
   (title := "F- minorizes I")
   (statement := /--
-  $F_{+,\lambda}(y) \geq I_\lambda(y)$ for all $y$.
+  $F_{-,\lambda}(y) \geq I_\lambda(y)$ for all $y$.
   -/)
   (proof := /-- TODO. -/)
   (latexEnv := "theorem")]
@@ -472,49 +543,37 @@ lemma I_prime_integrable (lambda : ℝ) (hlam : lambda ≠ 0) :
   have := I_prime_integral lambda hlam
   exact by contrapose! this; rw [MeasureTheory.integral_undef this]; positivity
 
+lemma phi_continuous_lemma (lambda ε : ℝ) (hlam : lambda ≠ 0) :
+    Continuous (ϕ lambda ε) := by
+  obtain ⟨_, hg⟩ := ϕ_continuous lambda ε hlam
+  rw [show ϕ lambda ε = fun x => ϕ lambda ε 0 + ∫ t in (0 : ℝ)..x, deriv (ϕ lambda ε) t
+    by ext x; linear_combination hg 0 x]
+  apply continuous_const.add
+  apply_rules [intervalIntegral.continuous_primitive]
+  intro a b
+  apply_rules [MeasureTheory.IntegrableOn.intervalIntegrable]
+  have hbv := (ϕ_deriv_bv lambda ε hlam).mono (Set.subset_univ (Set.uIcc a b))
+  have h_bd : ∃ C, ∀ x ∈ Set.uIcc a b,
+      ‖deriv (ϕ lambda ε) x - deriv (ϕ lambda ε) a‖ ≤ C :=
+    ⟨_, fun x hx ↦ hbv.dist_le hx Set.left_mem_uIcc⟩
+  exact .mono' (g := fun _ ↦ h_bd.choose + ‖deriv (ϕ lambda ε) a‖)
+    continuous_const.integrableOn_Icc (aestronglyMeasurable_deriv _ _)
+    (by filter_upwards [MeasureTheory.ae_restrict_mem measurableSet_Icc] with x hx
+        have h1 := norm_add_le (deriv (ϕ lambda ε) x - deriv (ϕ lambda ε) a) (deriv (ϕ lambda ε) a)
+        simpa using h1.trans (add_le_add_left (h_bd.choose_spec x hx) _))
+
 lemma integral_F_eq_phi_zero (lambda : ℝ) (hlam : lambda ≠ 0) :
     ∫ y, F lambda 1 y = (ϕ lambda 1 0).re := by
-  have h_cont : Continuous (ϕ lambda 1) ∧ Integrable (ϕ lambda 1) volume ∧
-      Integrable (𝓕 (ϕ lambda 1)) volume := by
-    have h_cont : Continuous (ϕ lambda 1) ∧ Integrable (ϕ lambda 1) volume := by
-      constructor
-      · obtain ⟨g, hg⟩ := ϕ_continuous lambda 1 hlam
-        rw [show ϕ lambda 1 = fun x ↦ ϕ lambda 1 0 + ∫ t in (0 : ℝ)..x, deriv (ϕ lambda 1) t
-          by ext x; linear_combination hg 0 x]
-        apply continuous_const.add
-        apply intervalIntegral.continuous_primitive
-        intro a b
-        apply_rules [MeasureTheory.IntegrableOn.intervalIntegrable]
-        have hbv : BoundedVariationOn (deriv (ϕ lambda 1)) Set.univ :=
-          ϕ_deriv_bv lambda 1 hlam
-        have hbv_loc := hbv.mono (Set.subset_univ (Set.uIcc a b))
-        have h_bounded : ∃ C, ∀ x ∈ Set.uIcc a b, ‖deriv (ϕ lambda 1) x‖ ≤ C := by
-          have h_bd : ∃ C, ∀ x ∈ Set.uIcc a b,
-              ‖deriv (ϕ lambda 1) x - deriv (ϕ lambda 1) a‖ ≤ C :=
-            ⟨_, fun x hx ↦ hbv_loc.dist_le hx Set.left_mem_uIcc⟩
-          exact ⟨h_bd.choose + ‖deriv (ϕ lambda 1) a‖, fun x hx ↦ by
-            simpa using (norm_add_le (deriv (ϕ lambda 1) x - deriv (ϕ lambda 1) a)
-              (deriv (ϕ lambda 1) a)).trans (add_le_add (h_bd.choose_spec x hx) le_rfl)⟩
-        exact MeasureTheory.Integrable.mono' (g := fun _ ↦ h_bounded.choose)
-          continuous_const.integrableOn_Icc
-          (aestronglyMeasurable_deriv (ϕ lambda 1) (volume.restrict (Set.uIcc a b)))
-          (by filter_upwards [MeasureTheory.ae_restrict_mem measurableSet_Icc] with x hx using
-            h_bounded.choose_spec x hx)
-      · exact ϕ_integrable lambda 1 hlam
-    have h_fourier_integrable : Integrable (𝓕 (ϕ lambda 1)) volume := by
-      have hF_int : Integrable (F lambda 1) volume := F_integrable lambda 1 hlam
-      have hF_real : ∀ y : ℝ, (𝓕 (ϕ lambda 1) y).im = 0 := fun y ↦ F.real lambda 1 y
-      convert hF_int.ofReal using 1
-      congr! 1
-      ext y; simp [F]
-      simp [Complex.ext_iff, hF_real]
-    exact ⟨h_cont.1, h_cont.2, h_fourier_integrable⟩
-  have h_inv : 𝓕⁻ (𝓕 (ϕ lambda 1)) 0 = ϕ lambda 1 0 :=
-    congr_fun (Continuous.fourierInv_fourier_eq h_cont.1 h_cont.2.1 h_cont.2.2) 0
+  have h_fourier_int : Integrable (𝓕 (ϕ lambda 1)) volume := by
+    convert (F_integrable lambda 1 hlam).ofReal using 1; congr! 1; ext y
+    simp [F, Complex.ext_iff, F.real lambda 1 y]
+  have h_inv := congr_fun (Continuous.fourierInv_fourier_eq (phi_continuous_lemma lambda 1 hlam)
+    (ϕ_integrable lambda 1 hlam) h_fourier_int) 0
   rw [← h_inv]
-  simp only [F, fourierInv, VectorFourier.fourierIntegral, LinearMap.neg_apply, innerₗ_apply_apply,
-    RCLike.inner_apply, zero_mul, neg_zero, AddChar.map_zero_eq_one, one_smul]
-  convert integral_re h_cont.2.2
+  simp only [F, FourierTransformInv.fourierInv, VectorFourier.fourierIntegral,
+    LinearMap.neg_apply, innerₗ_apply_apply, RCLike.inner_apply, zero_mul, neg_zero,
+    AddChar.map_zero_eq_one, one_smul]
+  convert integral_re h_fourier_int
 
 @[blueprint "F-plus-l1"
   (title := "F+ L1 bound")
@@ -531,6 +590,29 @@ theorem F.plus_l1 (lambda : ℝ) (hlam : lambda ≠ 0) :
   · exact F_integrable lambda 1 hlam
   · exact I_prime_integrable lambda hlam
 
+lemma phi_minus_zero_val (lambda : ℝ) (hlam : lambda ≠ 0) :
+    (ϕ lambda (-1) 0).re = 1 / (Real.exp (|lambda|) - 1) := by
+  unfold ϕ ϕ_pm Phi_circ Phi_star coth
+  simp only [mul_zero, Left.neg_nonpos_iff, zero_le_one, and_self, ↓reduceIte, one_div,
+    Complex.tanh, ofReal_zero, zero_add, sub_self, add_zero, mul_re, inv_re, neg_mul]
+  norm_cast; rw [cosh_eq, sinh_eq]; ring_nf
+  norm_num [Real.exp_neg, Real.exp_mul]; field_simp
+  rw [← Real.sqrt_eq_rpow, Real.sq_sqrt (by positivity), div_add', div_eq_div_iff] <;>
+    nlinarith [Real.add_one_le_exp |lambda|, abs_pos.mpr hlam]
+
+lemma integral_F_minus_eq_phi_minus_zero (lambda : ℝ) (hlam : lambda ≠ 0) :
+    ∫ y, F lambda (-1) y = (ϕ lambda (-1) 0).re := by
+  have h_fourier_int : Integrable (𝓕 (ϕ lambda (-1))) volume := by
+    convert (F_integrable lambda (-1) hlam).ofReal using 1; congr! 1; ext y
+    simp [F, Complex.ext_iff, F.real lambda (-1) y]
+  have h_inv := congr_fun (Continuous.fourierInv_fourier_eq (phi_continuous_lemma lambda (-1) hlam)
+    (ϕ_integrable lambda (-1) hlam) h_fourier_int) 0
+  rw [← h_inv]
+  simp only [F, FourierTransformInv.fourierInv, VectorFourier.fourierIntegral,
+    LinearMap.neg_apply, innerₗ_apply_apply, RCLike.inner_apply, zero_mul, neg_zero,
+    AddChar.map_zero_eq_one, one_smul]
+  convert integral_re h_fourier_int
+
 @[blueprint
   "F-minus-l1"
   (title := "F- L1 bound")
@@ -540,9 +622,12 @@ theorem F.plus_l1 (lambda : ℝ) (hlam : lambda ≠ 0) :
   (proof := /-- This should follow from the Fourier inversion formula, after showing $F_{-,\lambda}$ is in $L^1$.. -/)
   (latexEnv := "theorem")
   (discussion := 968)]
-theorem F.minus_l1 (lambda y : ℝ) (hlam : lambda ≠ 0) :
-    ∫ y : ℝ, I' lambda y - F lambda (-1) y =
-      1 / |lambda| - 1 / (rexp (|lambda|) - 1) := by sorry
+theorem F.minus_l1 (lambda : ℝ) (hlam : lambda ≠ 0) :
+    ∫ y : ℝ, I' lambda y - F lambda (-1) y = 1 / |lambda| - 1 / (rexp (|lambda|) - 1) := by
+  rw [MeasureTheory.integral_sub]
+  · rw [integral_F_minus_eq_phi_minus_zero, I_prime_integral, phi_minus_zero_val] <;> assumption
+  · exact I_prime_integrable lambda hlam
+  · exact F_integrable lambda (-1) hlam
 
 blueprint_comment /--
 TODO: Lemmas 4.2, 4.3, 4.4

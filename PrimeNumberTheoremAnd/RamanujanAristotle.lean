@@ -14,7 +14,7 @@ for sufficiently large $x$, following [reference].
 namespace Ramanujan
 
 
-open Real Chebyshev
+open Real Set MeasureTheory intervalIntegral Chebyshev
 
 noncomputable def ε (M x : ℝ) : ℝ := 72 + 2 * M + (2 * M + 132) / log x + (4 * M + 288) / (log x)^2 + (12 * M + 576) / (log x)^3 + (48 * M) / (log x)^4 + (M^2) / (log x)^5
 
@@ -36,7 +36,7 @@ $$\epsilon_{M_a} (x) = 72 + 2 M_a + \frac{2M_a+132}{\log x} + \frac{4M_a+288}{\l
 PROVIDED SOLUTION:
 Direct calculation
 -/
-theorem sq_pi_lt (M_a x_a : ℝ) (hupper : ∀ x > x_a, pi x < x * ∑ k ∈ Finset.range 5, (k.factorial / log x ^ (k + 1)) + (M_a * x / log x ^ 6)) :
+theorem sq_pi_lt (M_a x_a : ℝ) (hupper : ∀ x > x_a, pi x < x * ∑ k ∈ Finset.range 5, (k.factorial / log x ^ (k + 1)) + (M_a * x / log x ^ 6)) (hM_a : M_a > 0) :
     ∀ x > x_a, pi x ^ 2 < x ^ 2 * (∑ k ∈ Finset.range 5, (k.factorial / log x ^ (k + 1)) + (M_a * x / log x ^ 6) + ε M_a x / log x ^ 7) := by
     sorry
 
@@ -84,17 +84,23 @@ theorem criterion (m_a M_a x_a : ℝ)
     ∀ x > max (exp 1 * x_a) (x' m_a M_a x_a), pi x ^ 2 < exp 1 * x / log x * pi (x / exp 1) := by
   sorry
 
-/-- **Integral identity for pi - li**
+
+/-- Integration by parts formula for `Li(x)`. -/
+lemma Li_eq_sub_add_integral (x : ℝ) (hx : 2 ≤ x) :
+    Li x = x / log x - 2 / log 2 + ∫ t in Icc 2 x, 1 / log t ^ 2 := by
+  admit
+
+/-- **Integral identity for pi - Li**
 
 If $x \geq 2$, then
-$$\pi(x) - \textrm{li}(x) = \frac{\theta(x) - x}{\log x} + \frac{2}{\log 2} + \int_{2}^{x} \frac{\theta(t) -t}{t \log^{2}t}\, dt.$$
+$$\pi(x) - \textrm{Li}(x) = \frac{\theta(x) - x}{\log x} + \frac{2}{\log 2} + \int_{2}^{x} \frac{\theta(t) -t}{t \log^{2}t}\, dt.$$
 
 PROVIDED SOLUTION:
 Follows from Sublemma \ref{rs-417} and the fundamental theorem of calculus.
 -/
 theorem pi_error_identity (x : ℝ) (hx : 2 ≤ x) :
-    pi x - li x = (θ x - x) / log x + 2 / log 2 + ∫ t in Set.Icc 2 x, (θ t - t) / (t * log t ^ 2) := by
-    sorry
+    pi x - Li x = (θ x - x) / log x + 2 / log 2 + ∫ t in Icc 2 x, (θ t - t) / (t * log t ^ 2) := by
+  admit
 
 /-- **Upper bound for pi**
 
@@ -108,18 +114,6 @@ Follows from Lemma \ref{pi-error-identity} and the triangle inequality.
 -/
 theorem pi_upper (a : ℝ → ℝ) (htheta : ∀ x ≥ 2, abs (θ x - x) * log x ^ 5 ≤ x * a x) (x : ℝ) (hx : 2 ≤ x) :
     pi x ≤ x / log x + a x * x / log x ^ 6 + ∫ t in Set.Icc 2 x, 1 / log t ^ 2 + ∫ t in Set.Icc 2 x, a t / log t ^ 7 := by
-    sorry
-
-/-- **Bound for integral of an inverse power of log**
-
-For $x \geq 2$ we have
-$$\int_2^x \frac{dt}{\log^7 t} < \frac{x}{\log^7 x} + 7 \Big( \frac{\sqrt{x}}{\log^8 2} + \frac{2^8 x}{\log^8 x} \Big).$$
-
-PROVIDED SOLUTION:
-This follows from the trivial bound $\int_2^x \frac{dt}{\log^7 t} < \int_2^x \frac{dt}{\log^7 \sqrt{x}}$ and the bound $\int_2^x \frac{dt}{\log^7 t} < \int_2^x \frac{dt}{\log^7 x}$.
--/
-theorem log_7_int_bound (x : ℝ) (hx : 2 ≤ x) :
-    ∫ t in Set.Icc 2 x, 1 / log t ^ 7 < x / log x ^ 7 + 7 * (sqrt x / log 2 ^ 8 + 2 ^ 8 * x / log x ^ 8) := by
     sorry
 
 /-- **Lower bound for pi**
@@ -136,69 +130,81 @@ theorem pi_lower (a : ℝ → ℝ) (htheta : ∀ x ≥ 2, abs (θ x - x) * log x
     pi x ≥ x / log x - a x * x / log x ^ 6 + ∫ t in Set.Icc 2 x, 1 / log t ^ 2 - ∫ t in Set.Icc 2 x, a t / log t ^ 7 := by
     sorry
 
-/-- **Error estimate for pi, range 1**
+/-- **Bound for integral of an inverse power of log**
 
-For $2 < x \leq 599$ we have
-$$E_\pi(x) \leq \frac{2 - \log 2}{2}.$$
+For $x \geq 2$ we have
+$$\int_2^x \frac{dt}{\log^7 t} < \frac{x}{\log^7 x} + 7 \Big( \frac{\sqrt{x}}{\log^8 2} + \frac{2^8 x}{\log^8 x} \Big).$$
 
 PROVIDED SOLUTION:
-Trivial.
+Integrate by parts to write the left-hand side as $\frac{x}{\log^7 x} - \frac{2}{\log^7 2} + 7 \int_2^x \frac{t}{\log^8 t} dt$.  Discard the middle term.  For the final term, split between $\int_2^{\sqrt{x}}$ and $\int_{\sqrt{x}}^x$.  For the first, use the bound $\int_2^{\sqrt{x}} \frac{t}{\log^8 t} dt < \int_2^{\sqrt{x}} \frac{t}{\log^8 2} dt$, and for the second, use the bound $\int_{\sqrt{x}}^x \frac{t}{\log^8 t} dt < \int_{\sqrt{x}}^x \frac{t}{\log^8 x} dt$.
 -/
-theorem pi_bound_1 (x : ℝ) (hx : x ∈ Set.Ico 2 599) :
-    Eπ x ≤ (2 - log 2) / 2 := by
+theorem log_7_int_bound (x : ℝ) (hx : 2 ≤ x) :
+    ∫ t in Set.Icc 2 x, 1 / log t ^ 7 < x / log x ^ 7 + 7 * (sqrt x / log 2 ^ 8 + 2 ^ 8 * x / log x ^ 8) := by
     sorry
 
-/-- **Error estimate for pi, range 2**
+/-- **Error estimate for theta, range 1**
+
+For $2 < x \leq 599$ we have
+$$E_\theta(x) \leq 1 - \frac{\log 3}{3}.$$
+
+PROVIDED SOLUTION:
+This can be verified by direct computation, perhaps breaking $x$ up into intervals.  In [reference] the bound of $(2 - \log 2)/2$ is claimed, but this is actually false for $2 < x < 3$.
+-/
+theorem pi_bound_1 (x : ℝ) (hx : x ∈ Set.Ico 2 599) :
+    Eθ x ≤ 1 - log 3 / 3 := by
+    sorry
+
+/-- **Error estimate for theta, range 2**
 
 For $599 < x \leq \exp(58)$ we have
-$$E_\pi(x) \leq \frac{\log^2 x}{8\pi\sqrt{x}}.$$
+$$E_\theta(x) \leq \frac{\log^2 x}{8\pi\sqrt{x}}.$$
 
 PROVIDED SOLUTION:
 This is [reference].
 -/
 theorem pi_bound_2 (x : ℝ) (hx : x ∈ Set.Ico 599 (exp 58)) :
-    Eπ x ≤ log x ^ 2 / (8 * π * sqrt x) := by
+    Eθ x ≤ log x ^ 2 / (8 * π * sqrt x) := by
     sorry
 
-/-- **Error estimate for pi, range 3**
+/-- **Error estimate for theta, range 3**
 
 For $\exp(58) < x < \exp(1169)$ we have
-$$E_\pi(x) \leq \sqrt\frac{8}{17\pi}\left(\frac{\log x}{6.455}\right)^{\frac{1}{4}}\exp\left(-\sqrt{\frac{\log x}{6.455}}\right).$$
+$$E_\theta(x) \leq \sqrt\frac{8}{17\pi}\left(\frac{\log x}{6.455}\right)^{\frac{1}{4}}\exp\left(-\sqrt{\frac{\log x}{6.455}}\right).$$
 
 PROVIDED SOLUTION:
 This follows from Corollary \ref{pt_cor_1}.
 -/
 theorem pi_bound_3 (x : ℝ) (hx : x ∈ Set.Ico (exp 58) (exp 1169)) :
-    Eπ x ≤ sqrt (8 / (17 * π)) * (log x / 6.455) ^ (1 / 4) * exp (-sqrt (log x / 6.455)) := by
+    Eθ x ≤ sqrt (8 / (17 * π)) * (log x / 6.455) ^ (1 / 4) * exp (-sqrt (log x / 6.455)) := by
     sorry
 
-/-- **Error estimate for pi, range 4**
+/-- **Error estimate for theta, range 4**
 
 For $\exp(1169) \leq x < \exp(2000)$ we have
-$$E_\pi(x) \leq 462.0\left(\frac{\log x}{5.573412}\right)^{1.52}\exp\left(-1.89\sqrt{\frac{\log x}{5.573412}}\right).$$
+$$E_\theta(x) \leq 462.0\left(\frac{\log x}{5.573412}\right)^{1.52}\exp\left(-1.89\sqrt{\frac{\log x}{5.573412}}\right).$$
 
 PROVIDED SOLUTION:
 This follows from Corollary \ref{pt_cor_1}.
 -/
 theorem pi_bound_4 (x : ℝ) (hx : x ∈ Set.Ico (exp 1169) (exp 2000)) :
-    Eπ x ≤ 462.0 * (log x / 5.573412) ^ (1.52 : ℝ) * exp (-1.89 * sqrt (log x / 5.573412)) := by
+    Eθ x ≤ 462.0 * (log x / 5.573412) ^ (1.52 : ℝ) * exp (-1.89 * sqrt (log x / 5.573412)) := by
     sorry
 
-/-- **Error estimate for pi, range 5**
+/-- **Error estimate for theta, range 5**
 
 For $\exp(2000) \leq x < \exp(3000)$ we have
-$$E_\pi(x) \leq 411.5\left(\frac{\log x}{5.573412}\right)^{1.52}\exp\left(-1.89\sqrt{\frac{\log x}{5.573412}}\right).$$
+$$E_\theta(x) \leq 411.5\left(\frac{\log x}{5.573412}\right)^{1.52}\exp\left(-1.89\sqrt{\frac{\log x}{5.573412}}\right).$$
 
 PROVIDED SOLUTION:
 This follows from Corollary \ref{pt_cor_1}.
 -/
 theorem pi_bound_5 (x : ℝ) (hx : x ∈ Set.Ico (exp 2000) (exp 3000)) :
-    Eπ x ≤ 411.5 * (log x / 5.573412) ^ (1.52 : ℝ) * exp (-1.89 * sqrt (log x / 5.573412)) := by
+    Eθ x ≤ 411.5 * (log x / 5.573412) ^ (1.52 : ℝ) * exp (-1.89 * sqrt (log x / 5.573412)) := by
     sorry
 
 
 noncomputable def a (x : ℝ) : ℝ := (log x)^5 * (
-  if x ∈ Set.Ico 2 599 then (2 - log 2) / 2
+  if x ∈ Set.Ico 2 599 then 1 - log 2 / 3
   else if x ∈ Set.Ico 599 (exp 58) then log x ^ 2 / (8 * π * sqrt x)
   else if x ∈ Set.Ico (exp 58) (exp 1169) then sqrt (8 / (17 * π)) * (log x / 6.455) ^ (1 / 4) * exp (-sqrt (log x / 6.455))
   else if x ∈ Set.Ico (exp 1169) (exp 2000) then 462.0 * (log x / 5.573412) ^ (1.52 : ℝ) * exp (-1.89 * sqrt (log x / 5.573412))
@@ -207,13 +213,13 @@ noncomputable def a (x : ℝ) : ℝ := (log x)^5 * (
 /-- **Equation (18) of Platt-Trudgian**
 
 For $x \geq 2$ we have
-$$E_\pi(x) \leq a(x).$$
+$$E_\theta(x) \leq a(x).$$
 
 PROVIDED SOLUTION:
 This follows from the previous five sublemmas.
 -/
 theorem pi_bound (x : ℝ) (hx : 2 ≤ x) :
-    Eπ x ≤ a x := by
+    Eθ x ≤ a x := by
     sorry
 
 
@@ -223,11 +229,10 @@ noncomputable def xₐ : ℝ := exp 3914
 The function $a(x)$ is nonincreasing for $x \geq x_a$.
 
 PROVIDED SOLUTION:
-This is a direct calculation.
+Follows from Lemma \ref{admissible-bound-monotone}.
 -/
 theorem a_mono : AntitoneOn a (Set.Ici xₐ) := by
-    sorry
-
+  admit
 
 noncomputable def C₁ : ℝ := log xₐ ^ 6 / xₐ * ∫ t in Set.Icc 2 xₐ, (720 + a t) / log t ^ 7
 
@@ -254,12 +259,12 @@ theorem pi_upper_specific : ∀ x > xₐ, pi x < x * ∑ k ∈ Finset.range 5, (
 
 /-- **Specific lower bound on pi**
 
-For $x \geq x_a$, $$ \pi(x) > x \sum_{k=0}^{4} \frac{k!}{\log^{k+1}x}-\frac{m_a x}{\log^6 x}.$$.
+For $x \geq x_a$, $$ \pi(x) > x \sum_{k=0}^{4} \frac{k!}{\log^{k+1}x}+\frac{m_a x}{\log^6 x}.$$.
 
 PROVIDED SOLUTION:
 This follows from the previous lemmas and calculations, including Lemma \ref{log-7-int-bound}.
 -/
-theorem pi_lower_specific : ∀ x > xₐ, pi x > x * ∑ k ∈ Finset.range 5, (k.factorial / log x ^ (k + 1)) - (mₐ * x / log x ^ 6) := by
+theorem pi_lower_specific : ∀ x > xₐ, pi x > x * ∑ k ∈ Finset.range 5, (k.factorial / log x ^ (k + 1)) + (mₐ * x / log x ^ 6) := by
     sorry
 
 /-- **Bound for εMₐ - εmₐ**
@@ -277,7 +282,7 @@ theorem epsilon_bound : εMₐ - εmₐ < 0 := by
 For $x \geq e x_a$ we have $\pi(x)^2 < \frac{e x}{\log x} \pi\Big(\frac{x}{e}\Big)$.
 
 PROVIDED SOLUTION:
-This follows from the previous lemmas and calculations, including the criterion for Ramanujan's inequality.
+[reference] This follows from the previous lemmas and calculations, including the criterion for Ramanujan's inequality.
 -/
 theorem ramanujan_final : ∀ x > exp 1 * xₐ, pi x ^ 2 < exp 1 * x / log x * pi (x / exp 1) := by
     sorry

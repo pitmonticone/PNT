@@ -15,9 +15,9 @@ open Finset Nat Real
 -/
 /-- $\sigma(n)$ is the sum of the divisors of $n$.
 -/
-def σ : ArithmeticFunction ℕ := sigma 1
+def sigmaAF : ArithmeticFunction ℕ := ArithmeticFunction.sigma 1
 
-noncomputable abbrev σnorm (n : ℕ) : ℝ := (σ n : ℝ) / (n : ℝ)
+noncomputable abbrev σnorm (n : ℕ) : ℝ := (sigmaAF n : ℝ) / (n : ℝ)
 /-- A positive integer \(N\) is called \emph{highly abundant} (HA) if
   $$
     \sigma(N) > \sigma(m)
@@ -26,7 +26,7 @@ noncomputable abbrev σnorm (n : ℕ) : ℝ := (σ n : ℝ) / (n : ℝ)
   of \(n\).
 -/
 def HighlyAbundant (N : ℕ) : Prop :=
-  ∀ m : ℕ, m < N → σ m < σ N
+  ∀ m : ℕ, m < N → sigmaAF m < sigmaAF N
 
 /-!
 Informally, a highly abundant number has an unusually large sum of divisors.

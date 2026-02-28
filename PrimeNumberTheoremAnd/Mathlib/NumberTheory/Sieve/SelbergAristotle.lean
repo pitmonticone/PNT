@@ -57,7 +57,7 @@ theorem selbergBoundingSum_nonneg : 0 ≤ S := by
 
 def selbergWeights : ℕ → ℝ := fun d =>
   if d ∣ P then
-    (ν d)⁻¹ * g d * μ d * S⁻¹ *
+    (ν d)⁻¹ * g d * ArithmeticFunction.moebius d * S⁻¹ *
       ∑ m ∈ divisors P, if (d * m) ^ 2 ≤ y ∧ m.Coprime d then g m else 0
   else 0
 
@@ -75,7 +75,7 @@ theorem selbergWeights_eq_zero (d : ℕ) (hd : ¬d ^ 2 ≤ y) :
 
 @[aesop safe]
 theorem selbergWeights_mul_mu_nonneg (d : ℕ) (hdP : d ∣ P) :
-    0 ≤ γ d * μ d := by
+    0 ≤ γ d * ArithmeticFunction.moebius d := by
   admit
 
 lemma sum_mul_subst (k n : ℕ) {f : ℕ → ℝ} (h : ∀ l, l ∣ n → ¬ k ∣ l → f l = 0) :
@@ -86,13 +86,13 @@ lemma sum_mul_subst (k n : ℕ) {f : ℕ → ℝ} (h : ∀ l, l ∣ n → ¬ k �
 --Important facts about the selberg weights
 theorem selbergWeights_eq_dvds_sum (d : ℕ) :
     ν d * γ d =
-      S⁻¹ * μ d *
+      S⁻¹ * ArithmeticFunction.moebius d *
         ∑ l ∈ divisors P, if d ∣ l ∧ l ^ 2 ≤ y then g l else 0 := by
   admit
 
 theorem selbergWeights_diagonalisation (l : ℕ) (hl : l ∈ divisors P) :
     (∑ d ∈ divisors P, if l ∣ d then ν d * γ d else 0) =
-      if l ^ 2 ≤ y then g l * μ l * S⁻¹ else 0 := by
+      if l ^ 2 ≤ y then g l * ArithmeticFunction.moebius l * S⁻¹ else 0 := by
   admit
 
 def selbergMuPlus : ℕ → ℝ :=
@@ -132,25 +132,25 @@ private lemma _helper {k m d : ℕ} (hkd : k ∣ d) (hk : k ∈ divisors P) (hm 
   admit
 
 theorem selbergBoundingSum_ge {d : ℕ} (hdP : d ∣ P) :
-    S ≥ γ d * ↑(μ d) * S := by
+    S ≥ γ d * ↑(ArithmeticFunction.moebius d) * S := by
   admit
 
 theorem selberg_bound_weights (d : ℕ) : |γ d| ≤ 1 := by
   admit
 
 theorem selberg_bound_muPlus (n : ℕ) (hn : n ∈ divisors P) :
-    |μ⁺ n| ≤ (3:ℝ) ^ ω n := by
+    |μ⁺ n| ≤ (3:ℝ) ^ ArithmeticFunction.cardDistinctFactors n := by
   admit
 
 theorem selberg_bound_simple_errSum :
     errSum (s := s.toBoundingSieve) μ⁺ ≤
-      ∑ d ∈ divisors P, if (d : ℝ) ≤ y then (3:ℝ) ^ ω d * |R d| else 0 := by
+      ∑ d ∈ divisors P, if (d : ℝ) ≤ y then (3:ℝ) ^ ArithmeticFunction.cardDistinctFactors d * |R d| else 0 := by
   admit
 
 theorem selberg_bound_simple :
     siftedSum (s := s.toBoundingSieve) ≤
       X / S +
-        ∑ d ∈ divisors P, if (d : ℝ) ≤ y then (3:ℝ) ^ ω d * |R d| else 0 := by
+        ∑ d ∈ divisors P, if (d : ℝ) ≤ y then (3:ℝ) ^ ArithmeticFunction.cardDistinctFactors d * |R d| else 0 := by
   admit
 
 end SelbergSieve

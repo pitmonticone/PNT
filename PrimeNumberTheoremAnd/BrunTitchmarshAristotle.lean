@@ -25,16 +25,12 @@ def primeInterSieve (x y z : ℝ) (hz : 1 ≤ z) : SelbergSieve where
   weights := fun _ => 1
   weights_nonneg := fun _ => zero_le_one
   totalMass := y
-  nu := (ζ : ArithmeticFunction ℝ).pdiv .id
+  nu := (ArithmeticFunction.zeta : ArithmeticFunction ℝ).pdiv .id
   nu_mult := by admit
   nu_pos_of_prime := fun p hp _ => by
-    simp [if_neg hp.ne_zero, Nat.pos_of_ne_zero hp.ne_zero]
+    admit
   nu_lt_one_of_prime := fun p hp _ => by
-    simp only [ArithmeticFunction.pdiv_apply, ArithmeticFunction.natCoe_apply,
-      ArithmeticFunction.zeta_apply, hp.ne_zero, ↓reduceIte, Nat.cast_one,
-      ArithmeticFunction.id_apply, one_div]
-    apply inv_lt_one_of_one_lt₀
-    exact_mod_cast hp.one_lt
+    admit
   level := z
   one_le_level := hz
 
@@ -112,7 +108,7 @@ theorem boudingSum_ge : (primeInterSieve x y z hz).selbergBoundingSum ≥ Real.l
 
 theorem primeSieve_rem_sum_le :
     ∑ d ∈ (primeInterSieve x y z hz).prodPrimes.divisors,
-        (if (d : ℝ) ≤ z then (3:ℝ) ^ ω d *
+        (if (d : ℝ) ≤ z then (3:ℝ) ^ ArithmeticFunction.cardDistinctFactors d *
           |rem (s := toBoundingSieve (self := primeInterSieve x y z hz)) d| else 0)
       ≤ 5 * z * (1+Real.log z)^3 := by
   admit

@@ -40,17 +40,11 @@ The function $\vartheta(x) = \sum_{p \leq x} \log p$ defines a Stieltjes functio
 PROVIDED SOLUTION:
 Trivial
 -/
-noncomputable def θ.Stieltjes : StieltjesFunction ℝ := {
+noncomputable def θ.Stieltjes : StieltjesFunction := {
   toFun := θ
   mono' := theta_mono
-  right_continuous' := fun x ↦ by
-    rw [ContinuousWithinAt, theta_eq_theta_coe_floor x]
-    refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
-    obtain hx | hx := le_total 0 x
-    · filter_upwards [Ico_mem_nhdsGE_of_mem ⟨floor_le hx, lt_floor_add_one x⟩] with y hy
-      rw [theta_eq_theta_coe_floor y, floor_eq_on_Ico _ _ hy]
-    · filter_upwards [Ico_mem_nhdsGE (by admit)] with y hy
-      simp [floor_of_nonpos hx, theta_eq_theta_coe_floor y, floor_eq_zero.mpr hy.2]
+  right_continuous' := by
+    admit
 }
 
 lemma theta_succ_sub (k : ℕ) : (θ (k + 1) - θ k) = if Nat.Prime (k + 1) then Real.log (k + 1) else 0  := by

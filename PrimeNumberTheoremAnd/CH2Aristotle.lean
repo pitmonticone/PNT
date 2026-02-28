@@ -41,11 +41,11 @@ theorem prop_2_3_1 {a : ℕ → ℂ} {T β : ℝ} (hT : 0 < T) (hβ : 1 < β)
     {φ : ℝ → ℂ} (hφ_mes : Measurable φ) (hφ_int : Integrable φ)
     (hφ_supp : ∀ x, x ∉ Set.Icc (-1) 1 → φ x = 0) -- this hypothesis may be unnecessary
     (hφ_Fourier : ∃ C : ℝ, ∀ y : ℝ, y ≠ 0 → ‖𝓕 φ y‖ ≤ C / |y| ^ β)
-    (x σ : ℝ) (hx : 0 < x) (hσ : 1 < σ) :
-    (1 / (2 * π)) * ∑' (n : ℕ+), a n * (x / (n ^ σ : ℝ)) * 𝓕 φ ((T / (2 * π)) * log (n / x)) =
+    (x sig : ℝ) (hx : 0 < x) (hsig : 1 < sig) :
+    (1 / (2 * π)) * ∑' (n : ℕ+), a n * (x / (n ^ sig : ℝ)) * 𝓕 φ ((T / (2 * π)) * log (n / x)) =
       (1 / (2 * π * T)) *
-        ∫ t in Set.Icc (-T) T, φ (t/T) * G (σ + t * I) * x ^ (t * I) +
-      (∫ y in Set.Iic (-T * log x / (2 * π)), rexp (-y * (σ - 1)) * 𝓕 φ y) * (x ^ (2 - σ) / T : ℝ) := by
+        ∫ t in Set.Icc (-T) T, φ (t/T) * G (sig + t * I) * x ^ (t * I) +
+      (∫ y in Set.Iic (-T * log x / (2 * π)), rexp (-y * (sig - 1)) * 𝓕 φ y) * (x ^ (2 - sig) / T : ℝ) := by
       sorry
 
 /-- **CH2 Proposition 2.3**
@@ -74,9 +74,9 @@ theorem prop_2_3 {a : ℕ → ℂ} {T β : ℝ} (hT : 0 < T) (hβ : 1 < β)
 
 $S_\sigma(x)$ is equal to $\sum_{n \leq x} a_n / n^\sigma$ if $\sigma < 1$ and $\sum_{n \geq x} a_n / n^\sigma$ if $\sigma > 1$.
 -/
-noncomputable def S (a : ℕ → ℝ) (σ x : ℝ) : ℝ :=
-  if σ < 1 then ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n / (n ^ σ : ℝ)
-  else ∑' (n:ℕ), if n ≥ x then a n / (n ^ σ : ℝ) else 0
+noncomputable def S (a : ℕ → ℝ) (sig x : ℝ) : ℝ :=
+  if sig < 1 then ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n / (n ^ sig : ℝ)
+  else ∑' (n:ℕ), if n ≥ x then a n / (n ^ sig : ℝ) else 0
 /-- **CH2 Definition of $I$, (2.9)**
 
 $I_\lambda(u) = 1_{[0,\infty)}(\mathrm{sgn}(\lambda)u) e^{-\lambda u}$.
@@ -121,15 +121,15 @@ theorem prop_2_4_plus {a : ℕ → ℝ} (ha_pos : ∀ n, a n ≥ 0) {T β : ℝ}
     {φ_plus : ℝ → ℂ} (hφ_mes : Measurable φ_plus) (hφ_int : Integrable φ_plus)
     (hφ_supp : ∀ x, x ∉ Set.Icc (-1) 1 → φ_plus x = 0)
     (hφ_Fourier : ∃ C : ℝ, ∀ y : ℝ, y ≠ 0 → ‖𝓕 φ_plus y‖ ≤ C / |y| ^ β)
-    (hI_le_Fourier : ∀ y : ℝ, ∀ σ : ℝ, σ ≠ 1 →
-      let lambda := (2 * π * (σ - 1)) / T
+    (hI_le_Fourier : ∀ y : ℝ, ∀ sig : ℝ, sig ≠ 1 →
+      let lambda := (2 * π * (sig - 1)) / T
       I' lambda y ≤ ‖𝓕 φ_plus y‖)
-    (x σ : ℝ) (hx : 1 ≤ x) (hσ : σ ≠ 1) :
-    S a σ x ≤
-      ((2 * π * (x ^ (1 - σ) : ℝ) / T) * φ_plus 0).re +
-      (x ^ (-σ) : ℝ) / T *
+    (x sig : ℝ) (hx : 1 ≤ x) (hsig : sig ≠ 1) :
+    S a sig x ≤
+      ((2 * π * (x ^ (1 - sig) : ℝ) / T) * φ_plus 0).re +
+      (x ^ (-sig) : ℝ) / T *
         (∫ t in Set.Icc (-T) T, φ_plus (t/T) * G (1 + t * I) * (x ^ (1 + t * I))).re -
-      if σ < 1 then 1 / (1 - σ) else 0 := by
+      if sig < 1 then 1 / (1 - sig) else 0 := by
   sorry
 
 /-- **CH2 Proposition 2.4, lower bound**
@@ -147,15 +147,15 @@ theorem prop_2_4_minus {a : ℕ → ℝ} (ha_pos : ∀ n, a n ≥ 0) {T β : ℝ
     {φ_minus : ℝ → ℂ} (hφ_mes : Measurable φ_minus) (hφ_int : Integrable φ_minus)
     (hφ_supp : ∀ x, x ∉ Set.Icc (-1) 1 → φ_minus x = 0)
     (hφ_Fourier : ∃ C : ℝ, ∀ y : ℝ, y ≠ 0 → ‖𝓕 φ_minus y‖ ≤ C / |y| ^ β)
-    (hFourier_le_I : ∀ y : ℝ, ∀ σ : ℝ, σ ≠ 1 →
-      let lambda := (2 * π * (σ - 1)) / T
+    (hFourier_le_I : ∀ y : ℝ, ∀ sig : ℝ, sig ≠ 1 →
+      let lambda := (2 * π * (sig - 1)) / T
       ‖𝓕 φ_minus y‖ ≤ I' lambda y)
-    (x σ : ℝ) (hx : 1 ≤ x) (hσ : σ ≠ 1) :
-    S a σ x ≥
-      ((2 * π * (x ^ (1 - σ) : ℝ) / T) * φ_minus 0).re +
-      (x ^ (-σ) : ℝ) / T *
+    (x sig : ℝ) (hx : 1 ≤ x) (hsig : sig ≠ 1) :
+    S a sig x ≥
+      ((2 * π * (x ^ (1 - sig) : ℝ) / T) * φ_minus 0).re +
+      (x ^ (-sig) : ℝ) / T *
         (∫ t in Set.Icc (-T) T, φ_minus (t/T) * G (1 + t * I) * (x ^ (1 + t * I))).re -
-      if σ < 1 then 1 / (1 - σ) else 0 := by
+      if sig < 1 then 1 / (1 - sig) else 0 := by
   sorry
 
 

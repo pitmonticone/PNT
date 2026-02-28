@@ -20,7 +20,7 @@ We will try to upstream as much as possible.
 -/
 
 /-- `τ` (tau) is the divisor count function, equal to `σ 0`. -/
-abbrev tau : ArithmeticFunction ℕ := σ 0
+abbrev tau : ArithmeticFunction ℕ := ArithmeticFunction.sigma 0
 
 @[inherit_doc tau]
 scoped notation "τ" => tau
@@ -52,7 +52,7 @@ Multiply out and collect terms.
 theorem sum_moebius_pmul_eq_prod_one_sub {R : Type*} [CommRing R]
     {g : ArithmeticFunction R} (hg : g.IsMultiplicative) {n : ℕ} (hn : n ≠ 0) :
     ∑ d ∈ n.divisors, (moebius d : R) * g d = ∏ p ∈ n.primeFactors, (1 - g p) := by
-  sorry
+  admit
 
 
 /-- The Dirichlet convolution of $\zeta$ with itself is $\tau$ (the divisor count function).
@@ -62,8 +62,9 @@ By definition of $\zeta$, we have $\zeta(n) = 1$ for all $n \geq 1$. Thus, the D
   $(\zeta * \zeta)(n)$ counts the number of ways to write $n$ as a product of two positive integers,
   which is exactly the number of divisors of $n$, i.e., $\tau(n)$.
 -/
-theorem zeta_mul_zeta : (ζ : ArithmeticFunction ℕ) * ζ = τ := by
-  sorry
+theorem zeta_mul_zeta :
+    (ArithmeticFunction.zeta : ArithmeticFunction ℕ) * ArithmeticFunction.zeta = τ := by
+  admit
 
 
 /-- The L-series of $\tau$ equals the square of the Riemann zeta function for $\Re(s) > 1$.
@@ -123,7 +124,7 @@ From the definition of $d k$ as the $k$-fold Dirichlet convolution of $\zeta$, w
 -/
 theorem LSeries_d_eq_riemannZeta_pow (k : ℕ) {s : ℂ} (hs : 1 < s.re) :
     LSeries (↗(d k)) s = riemannZeta s ^ k := by
-  sorry
+  admit
 
 
 /-- $d k$ is multiplicative for all $k$. (Is $k \ge1$ needed?)
@@ -184,8 +185,8 @@ PROVIDED SOLUTION:
 The function $\sigma^R$ is defined as the sum of the $s$-th powers of the divisors of $n$. When $s$ is a natural number $k$, this definition coincides with the classical divisor power sum function $\sigma k n$, which also sums the $k$-th powers of the divisors of $n$. Therefore, for natural exponents, we have $\sigma^R k n = \sigma k n$ when we view $\sigma k n$ as a complex number. This can be shown by directly comparing the definitions and noting that both functions sum over the same set of divisors with the same exponentiation.
 -/
 lemma sigmaR_natCast (k : ℕ) (n : ℕ) :
-    σᴿ k n = (σ k n : ℂ) := by
-  sorry
+    σᴿ k n = (ArithmeticFunction.sigma k n : ℂ) := by
+  admit
 
 
 /-- $\zeta(s)\zeta(s - \nu) = \sum_{n=1}^{\infty} \sigma_\nu(n) n^{-s}$ for $\Re(s) > 1$ and $\Re(s - \nu) > 1$.
@@ -195,7 +196,7 @@ The divisor power sum function $\sigma_\nu$ is the Dirichlet convolution of the 
 -/
 theorem LSeries_sigma_eq_riemannZeta_mul (ν : ℂ) {s : ℂ} (hs : 1 < s.re) (hsν : 1 < (s - ν).re) :
     LSeries (↗(σᴿ ν)) s = riemannZeta s * riemannZeta (s - ν) := by
-  sorry
+  admit
 
 
 /-

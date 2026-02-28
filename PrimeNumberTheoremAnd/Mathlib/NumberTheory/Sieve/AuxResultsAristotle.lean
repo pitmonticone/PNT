@@ -104,13 +104,13 @@ theorem sum_inv_le_log_real (y : ℝ) (hy : 1 ≤ y) :
 -- Lemma 3.1 in Heath-Brown's notes
 theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P k : ℕ} (x : ℝ) (hx : 1 ≤ x)
     (hP : Squarefree P) :
-    (∑ d ∈ P.divisors, if d ≤ x then (k:ℝ) ^ (ω d) / (d : ℝ) else (0 : ℝ))
+    (∑ d ∈ P.divisors, if d ≤ x then (k:ℝ) ^ (ArithmeticFunction.cardDistinctFactors d) / (d : ℝ) else (0 : ℝ))
     ≤ (1 + Real.log x) ^ k := by
   admit
 
 theorem sum_pow_cardDistinctFactors_le_self_mul_log_pow {P h : ℕ} (x : ℝ) (hx : 1 ≤ x)
     (hP : Squarefree P) :
-    (∑ d ∈ P.divisors, if ↑d ≤ x then (h : ℝ) ^ ω d else (0 : ℝ)) ≤
+    (∑ d ∈ P.divisors, if ↑d ≤ x then (h : ℝ) ^ ArithmeticFunction.cardDistinctFactors d else (0 : ℝ)) ≤
       x * (1 + Real.log x) ^ h := by
   admit
 

@@ -83,7 +83,8 @@ theorem selbergTerms_mult : ArithmeticFunction.IsMultiplicative g := by
   admit
 
 theorem one_div_selbergTerms_eq_conv_moebius_nu (l : ℕ) (hl : Squarefree l)
-    (hnu_nonzero : ν l ≠ 0) : 1 / g l = ∑ d ∈ l.divisors, (μ <| l / d) * (ν d)⁻¹ := by
+    (hnu_nonzero : ν l ≠ 0) :
+    1 / g l = ∑ d ∈ l.divisors, (ArithmeticFunction.moebius (l / d)) * (ν d)⁻¹ := by
   admit
 
 theorem nu_eq_conv_one_div_selbergTerms (d : ℕ) (hdP : d ∣ P) :

@@ -33,7 +33,6 @@ See: https://github.com/alerad/leancert
 open Real MeasureTheory Set
 open scoped Interval
 
-open LeanCert.Engine.TaylorModel  -- For symmetricLogCombination
 open Topology
 
 namespace Li2Bounds
@@ -50,6 +49,11 @@ noncomputable def li (x : ℝ) : ℝ :=
 
 /-! ### Symmetric Form Definition -/
 
+/-- LeanCert-free symmetric log combination:
+    `1/log(1+t) + 1/log(1-t)`. -/
+noncomputable def symmetricLogCombination (t : ℝ) : ℝ :=
+  1 / log (1 + t) + 1 / log (1 - t)
+
 /-- The symmetric log combination g(t) = 1/log(1+t) + 1/log(1-t).
     This has a removable singularity at t=0 with limit 1. -/
 noncomputable def g (t : ℝ) : ℝ := symmetricLogCombination t
@@ -58,9 +62,10 @@ noncomputable def g (t : ℝ) : ℝ := symmetricLogCombination t
     This equals the principal value integral ∫₀² dt/log(t). -/
 noncomputable def li2_symmetric : ℝ := ∫ t in (0:ℝ)..1, g t
 
-/-- Our li2_symmetric equals LeanCert's Li2.li2 (both are ∫₀¹ symmetricLogCombination). -/
-theorem li2_symmetric_eq_Li2_li2 : li2_symmetric = Li2.li2 := by
-  admit
+/-- LeanCert-free normalization of `li2_symmetric` as a direct integral. -/
+theorem li2_symmetric_eq_Li2_li2 :
+    li2_symmetric = ∫ t in (0 : ℝ)..1, symmetricLogCombination t := by
+  rfl
 
 /-! ### Integrability Lemmas -/
 

@@ -313,15 +313,6 @@ lemma Finset_coe_Nat_Int (f : ℤ → ℂ) (m n : ℕ) :
     (∑ x ∈ Finset.Ioc m n, f x) = ∑ x ∈ Finset.Ioc (m : ℤ) n, f x := by
   admit
 
-/-
-instead use `Finset.sum_map` and a version of `Nat.image_cast_int_Ioc` stated using `Finset.map`
--/
-  apply Finset.sum_nbij (i := (fun (x : ℕ) ↦ (x : ℤ))) ?_ ?_ ?_ fun _ _ ↦ rfl
-  · intro x hx; simp only [Finset.mem_Ioc, Nat.cast_lt, Nat.cast_le] at hx ⊢; exact hx
-  · intro x₁ _ x₂ _ h; simp only [Nat.cast_inj] at h; exact h
-  · intro x hx
-    simp only [Finset.coe_Ioc, mem_image, mem_Ioc] at hx ⊢
-    lift x to ℕ using (by admit); exact ⟨x, by exact_mod_cast hx, rfl⟩
 /-- **sum-eq-int-deriv**
 
 Let $a < b$, and let $\phi$ be continuously differentiable on $[a, b]$.

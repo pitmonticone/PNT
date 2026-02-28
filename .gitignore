@@ -68,3 +68,10 @@ home_page/_include/easy_to_unlock.md
 
 # Scripts
 scripts/aristotle_parallel.py
+
+## Local personal workspace
+.agent/
+.agents/
+.env
+/erdosproblems/
+/problem9/

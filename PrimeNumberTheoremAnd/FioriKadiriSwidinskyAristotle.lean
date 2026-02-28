@@ -238,7 +238,8 @@ For $s>1$, one has $\Gamma(s,x) \sim x^{s-1} e^{-x}$.
 -/
 theorem remark_2_6_b (s : ℝ) (h : s > 1) :
     Filter.Tendsto (fun x ↦ Gamma.incomplete s x / (x ^ (s - 1) * exp (-x)))
-      Filter.atTop (nhds 1) := by sorry
+      Filter.atTop (nhds 1) := by
+  admit
 
 /-- **FKS Theorem 3.1**
 
@@ -317,6 +318,10 @@ If $\sigma < 1 - 1/R \log H_0$ then $H_σ = H_0$.
 -/
 theorem remark_3_7 {H₀ R σ : ℝ} (hσ : σ < 1 - 1 / (R * log H₀)) : Hσ H₀ R σ = H₀ := by sorry
 
+
+theorem remark_3_7' {H₀ R σ : ℝ} (hH₀ : H₀ > 1) (hR : R > 0)
+    (hσ : σ < 1 - 1 / (R * log H₀)) : Hσ H₀ R σ = H₀ := by
+  admit
 
 noncomputable def ε₃ (I : Inputs) (x σ₁ σ₂ : ℝ) (N : ℕ) (T : ℝ) : ℝ :=
     2 * x ^ (-(1 - σ₁) + (σ₂ - σ₁) / N) * (I.B₀ σ₁ (Hσ I.H₀ I.R σ₁) T) +

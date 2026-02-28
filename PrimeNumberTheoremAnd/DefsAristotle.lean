@@ -17,7 +17,7 @@ noncomputable abbrev nth_prime (n : ℕ) : ℕ := Nat.nth Nat.Prime n
 
 noncomputable abbrev Psi (x : ℝ) : ℝ := ψ x
 
-noncomputable def M (x : ℝ) : ℝ := ∑ n ∈ Iic ⌊x⌋₊, (moebius n : ℝ)
+noncomputable def M (x : ℝ) : ℝ := ∑ n ∈ Iic ⌊x⌋₊, (ArithmeticFunction.moebius n : ℝ)
 
 noncomputable abbrev nth_prime_gap (n : ℕ) : ℕ := nth_prime (n+1) - (nth_prime n)
 

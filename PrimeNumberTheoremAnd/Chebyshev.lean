@@ -6,6 +6,8 @@ import Mathlib.NumberTheory.Chebyshev
 import Mathlib.Tactic.NormNum.BigOperators
 import PrimeNumberTheoremAnd.LogTables
 import PrimeNumberTheoremAnd.SecondaryDefinitions
+import LeanCert.Engine.ChebyshevPsi
+import LeanCert.Tactic.IntervalAuto
 
 blueprint_comment /--
 \section{Chebyshev's estimates}\label{chebyshev-estimates-sec}
@@ -342,6 +344,65 @@ theorem a_bound : a ∈ Set.Icc 0.92129 0.92130 := by
   constructor <;> nlinarith [LogTables.log_2_gt, LogTables.log_2_lt,
     LogTables.log_3_gt, LogTables.log_3_lt, LogTables.log_5_gt, LogTables.log_5_lt]
 
+noncomputable def e (x : ℝ) : ℝ :=
+  (T x - (x * log x - x + 1))
+
+lemma lemma_1 (x : ℝ) : T x = x * log x - x + 1 + (e x) := by
+  unfold e
+  ring
+
+lemma lemma_2 (x : ℝ) (hx : 1 ≤ x) : |e x| ≤ log x := by
+  rw [abs_le]
+  unfold e
+  constructor <;> linarith [T.ge x hx, T.le x hx]
+
+lemma lemma_3 (x : ℝ) :
+    U x = ν.sum (fun m w ↦ w * ((x / m) * (log (x / m))))
+          - ν.sum (fun m w ↦ w * (x / m))
+          + ν.sum (fun _m w ↦ w)
+          + ν.sum (fun m w ↦ w * e (x / m)) := by
+  unfold U
+  simp [Finsupp.sum, lemma_1, sub_eq_add_neg, add_mul, mul_comm, Finset.sum_add_distrib]
+
+lemma lemma_4 (x : ℝ) (hx : 0 < x) :
+    ν.sum (fun m w ↦ w * ((x / m) * log (x / m))) = a * x := by
+  have hx0 : x ≠ 0 := ne_of_gt hx
+  rw [ν,
+    Finsupp.sum_add_index (by simp) (by intros; ring),
+    Finsupp.sum_sub_index (by intros; ring),
+    Finsupp.sum_sub_index (by intros; ring),
+    Finsupp.sum_sub_index (by intros; ring)]
+  rw [a, ν,
+    Finsupp.sum_add_index (by simp) (by intros; ring),
+    Finsupp.sum_sub_index (by intros; ring),
+    Finsupp.sum_sub_index (by intros; ring),
+    Finsupp.sum_sub_index (by intros; ring)]
+  simp [sub_eq_add_neg,
+    Real.log_div hx0]
+  ring
+
+lemma lemma_5 (x : ℝ) :
+    ν.sum (fun m w ↦ w * (x / m)) = 0 := by
+  rw [ν,
+    Finsupp.sum_add_index (by simp) (by intros; ring),
+    Finsupp.sum_sub_index (by intros; ring),
+    Finsupp.sum_sub_index (by intros; ring),
+    Finsupp.sum_sub_index (by intros; ring)]
+  simp [div_eq_mul_inv, sub_eq_add_neg]
+  ring_nf
+
+lemma lemma_6 : ν.sum (fun _ w ↦ w) = (-1 : ℝ) := by
+  rw [ν,
+    Finsupp.sum_add_index (by simp) (by intros; ring),
+    Finsupp.sum_sub_index (by intros; simp),
+    Finsupp.sum_sub_index (by intros; simp),
+    Finsupp.sum_sub_index (by intros; simp)]
+  simp
+
+lemma Finsupp.abs_sum_le (A : Type*) (ν : A →₀ ℝ) (g : A → ℝ → ℝ) : |ν.sum g| ≤ ν.sum |g| := by
+  simp_rw [Finsupp.sum.eq_1]
+  exact Finset.abs_sum_le_sum_abs (fun i ↦ g i (ν i)) ν.support
+
 @[blueprint
   "U-bounds"
   (title := "Bounds for $U$")
@@ -349,7 +410,64 @@ theorem a_bound : a ∈ Set.Icc 0.92129 0.92130 := by
   (proof := /-- Use Lemma \ref{cheby-T-upper}, Lemma \ref{cheby-T-lower}, the definition of $a$, and the triangle inequality, also using that $\log(2)+\log(3)+\log(5)+\log(30) \geq 6$. -/)
   (latexEnv := "lemma")
   (discussion := 840)]
-theorem U_bound (x : ℝ) (hx : 30 ≤ x) : |U x - a * x| ≤ 5 * log x - 5 := by sorry
+theorem U_bound (x : ℝ) (hx : 30 ≤ x) : |U x - a * x| ≤ 5 * log x - 5 := by
+  have hxpos : 0 < x := lt_of_lt_of_le (by norm_num) hx
+  rw [lemma_3, lemma_4 x hxpos]
+  ring_nf
+  have hlin : ν.sum (fun m w ↦ x * w * (↑m)⁻¹) = 0 :=
+    by simpa [div_eq_mul_inv, mul_assoc, mul_left_comm, mul_comm] using lemma_5 x
+  rw [hlin]; ring_nf; rw [lemma_6]
+  grw [abs_add_le]; simp only [abs_neg, abs_one]
+  grw [Finsupp.abs_sum_le]
+  have hsupp_eq : ν.support = {1, 2, 3, 5, 30} := by norm_num [ν, Finset.ext_iff]; grind
+  have hmem_of_supp : ∀ i ∈ ν.support, 0 < i ∧ i ≤ 30 := fun i hi ↦ by
+    have : i ∈ ({1, 2, 3, 5, 30} : Finset ℕ) := hsupp_eq ▸ hi
+    simp only [Finset.mem_insert, Finset.mem_singleton] at this
+    constructor <;> omega
+  have h : ν.sum |fun m w ↦ w * e (x * (↑m)⁻¹)| ≤ ν.sum (fun m w ↦ |w| * log (x * (↑m)⁻¹)) := by
+    apply Finsupp.sum_le_sum
+    intro i hi
+    simp only [Pi.abs_apply, abs_mul]
+    obtain ⟨hi_pos, hi_le⟩ := hmem_of_supp i hi
+    have hxi : 1 ≤ x * (↑i)⁻¹ := by
+      rw [le_mul_inv_iff₀ (by exact_mod_cast hi_pos)]
+      linarith [show (i : ℝ) ≤ 30 from by exact_mod_cast hi_le]
+    gcongr; exact lemma_2 _ hxi
+  grw [h]
+  have hlog_split : ν.sum (fun m w ↦ |w| * log (x * (↑m : ℝ)⁻¹)) =
+      log x * ν.sum (fun m w ↦ |w|) - ν.sum (fun m w ↦ |w| * log (↑m : ℝ)) := by
+    simp only [Finsupp.sum]
+    conv_rhs => rw [Finset.mul_sum, ← Finset.sum_sub_distrib]
+    apply Finset.sum_congr rfl
+    intro m hm
+    have hm_pos : (0 : ℝ) < m := by exact_mod_cast (hmem_of_supp m hm).1
+    rw [← div_eq_mul_inv, Real.log_div (ne_of_gt hxpos) (ne_of_gt hm_pos)]; ring
+  rw [hlog_split]
+  have habs : ν.sum (fun m w ↦ |w|) = 5 := by
+    rw [Finsupp.sum_of_support_subset _ hsupp_eq.le _ (fun x _ => abs_zero)]
+    simp only [Finset.sum_insert (by decide : (1:ℕ) ∉ ({2,3,5,30} : Finset ℕ)),
+               Finset.sum_insert (by decide : (2:ℕ) ∉ ({3,5,30} : Finset ℕ)),
+               Finset.sum_insert (by decide : (3:ℕ) ∉ ({5,30} : Finset ℕ)),
+               Finset.sum_insert (by decide : (5:ℕ) ∉ ({30} : Finset ℕ)),
+               Finset.sum_singleton, ν, Finsupp.sub_apply, Finsupp.add_apply, Finsupp.single_apply]
+    norm_num
+  have hgeq6 : ν.sum (fun m w ↦ |w| * log ↑m) ≥ 6 := by
+    have hsum_eq : ν.sum (fun m w ↦ |w| * log (↑m : ℝ)) = log 2 + log 3 + log 5 + log 30 := by
+      rw [Finsupp.sum, hsupp_eq]
+      simp only [Finset.sum_insert (by decide : (1 : ℕ) ∉ ({2, 3, 5, 30} : Finset ℕ)),
+                 Finset.sum_insert (by decide : (2 : ℕ) ∉ ({3, 5, 30} : Finset ℕ)),
+                 Finset.sum_insert (by decide : (3 : ℕ) ∉ ({5, 30} : Finset ℕ)),
+                 Finset.sum_insert (by decide : (5 : ℕ) ∉ ({30} : Finset ℕ)),
+                 Finset.sum_singleton, ν, Finsupp.sub_apply, Finsupp.add_apply, Finsupp.single_apply]
+      norm_num [Real.log_one]; ring
+    linarith [hsum_eq, Real.log_two_gt_d9,
+              show log 3 > 1.09 from by interval_decide,
+              show log 5 > 1.60 from by interval_decide,
+              show log 30 = log 2 + log 3 + log 5 from by
+                rw [show (30 : ℝ) = 2 * 3 * 5 by norm_num,
+                    Real.log_mul (by norm_num) (by norm_num),
+                    Real.log_mul (by norm_num) (by norm_num)]]
+  grw [hgeq6]; rw [habs]; linarith
 
 @[blueprint
   "psi-lower"
@@ -359,10 +477,8 @@ theorem U_bound (x : ℝ) (hx : 30 ≤ x) : |U x - a * x| ≤ 5 * log x - 5 := b
   (latexEnv := "theorem")
   (discussion := 841)]
 theorem psi_lower (x : ℝ) (hx : 30 ≤ x) : ψ x ≥ a * x - 5 * log x + 5 := by
-  have h1 : ψ x ≥ U x := psi_ge_weighted x (by linarith)
-  have h2 := U_bound x hx
-  rw [abs_sub_le_iff] at h2
-  linarith [h2.1]
+  have h2 := abs_sub_le_iff.mp (U_bound x hx)
+  linarith [psi_ge_weighted x (by linarith), h2.1]
 
 @[blueprint
   "psi-diff-upper"
@@ -372,10 +488,8 @@ theorem psi_lower (x : ℝ) (hx : 30 ≤ x) : ψ x ≥ a * x - 5 * log x + 5 := 
   (latexEnv := "proposition")
   (discussion := 842)]
 theorem psi_diff_upper (x : ℝ) (hx : 30 ≤ x) : ψ x - ψ (x / 6) ≤ a * x + 5 * log x - 5 := by
-  have h1 : ψ x - ψ (x / 6) ≤ U x := psi_diff_le_weighted x (by linarith)
-  have h2 := U_bound x hx
-  rw [abs_sub_le_iff] at h2
-  linarith [h2.2]
+  have h2 := abs_sub_le_iff.mp (U_bound x hx)
+  linarith [psi_diff_le_weighted x (by linarith), h2.2]
 
 set_option maxHeartbeats 400000 in
 -- Proof splits into many cases
@@ -500,13 +614,37 @@ theorem psi_upper (x : ℝ) (hx : 30 ≤ x) : ψ x ≤ 6 * a * x / 5 + (log (x/5
       exact le_log_iff_exp_le (by linarith)|>.mpr (by linarith [exp_one_lt_three])
     · exact Nat.floor_le (by bound)
 
+set_option linter.style.nativeDecide false in
+open LeanCert.Engine.ChebyshevPsi in
+/-- The incremental checker verifies ψ(N) ≤ 1.11 N for all N = 1, …, 11723.
+    Note: the sparse checkpoint ladder indicated in the blueprint is not needed;
+    brute-force enumeration via `native_decide` suffices. -/
+private theorem allChecks_11723 : checkAllPsiLeMulWith 11723 (111 / 100) 20 = true :=
+  by native_decide
+
 @[blueprint
   "psi-num-2"
   (title := "Numerical bound for $\\psi(x)$ for medium $x$")
   (statement := /-- For $0 < x \leq 11723$, we have $\psi(x) \leq 1.11 x$. -/)
-  (proof := /-- From Lemma \ref{psi-num} we can take $x \geq 30$. If one considers the sequence $x_1,x_2,\dots$ defined by $27, 32, 37, 43, 50, 58, 67, 77, 88, 100, 114, 129, 147, 166, 187, 211, 238, 268, 302, 340, 381, 427, 479, 536, 600, 671, 750, 839, 938, 1048, 1172, 1310, 1464, 1636, 1827, 2041, 2279, 2544, 2839, 3167, 3534, 3943, 4398, 4905, 5471, 6101, 6803, 7586, 8458, 9431, 10515, 11723$ then one should have $\psi(x_{j+1}-1) \leq 1.11 x_j$ for all $j$, which suffices.-/)
+  (proof := /-- Verified by brute-force: an $O(N)$ incremental checker confirms $\psi(N) \leq 1.11 N$ for every integer $N = 1, \ldots, 11723$ via \texttt{native\_decide}. The sparse checkpoint ladder originally described here is not needed. The real-variable case follows by monotonicity of $\psi$. -/)
   (latexEnv := "sublemma")]
-theorem psi_num_2 (x : ℝ) (hx : x > 0) (hx2 : x ≤ 11723) : ψ x ≤ 1.11 * x := by sorry
+theorem psi_num_2 (x : ℝ) (hx : x > 0) (hx2 : x ≤ 11723) : ψ x ≤ 1.11 * x := by
+  open LeanCert.Engine.ChebyshevPsi in
+  rw [Chebyshev.psi_eq_psi_coe_floor x]
+  have hnn : (0 : ℝ) ≤ x := le_of_lt hx
+  have hfloor_le : ⌊x⌋₊ ≤ 11723 := Nat.floor_le_of_le hx2
+  rcases Nat.eq_zero_or_pos ⌊x⌋₊ with hf | hf
+  · simp only [hf, Nat.cast_zero]
+    rw [Chebyshev.psi_eq_zero_of_lt_two (by norm_num : (0:ℝ) < 2)]
+    linarith
+  · have hcheck := checkAllPsiLeMulWith_implies_checkPsiLeMulWith
+      11723 (111 / 100) 20 allChecks_11723 ⌊x⌋₊ hf hfloor_le
+    have h1 := psi_le_of_checkPsiLeMulWith ⌊x⌋₊ 20 (111 / 100) hcheck
+    have hcast : ((111 / 100 : ℚ) : ℝ) = 111 / 100 := by norm_num
+    rw [hcast] at h1
+    calc ψ (⌊x⌋₊ : ℝ) ≤ 111 / 100 * ⌊x⌋₊ := h1
+      _ ≤ 111 / 100 * x := by gcongr; exact Nat.floor_le hnn
+      _ = 1.11 * x := by norm_num
 
 @[blueprint
   "psi-upper-clean"
@@ -515,6 +653,48 @@ theorem psi_num_2 (x : ℝ) (hx : x > 0) (hx2 : x ≤ 11723) : ψ x ≤ 1.11 * x
   (proof := /-- Strong induction on $x$.  For $x \leq 11723$ one can use Sublemma \ref{psi-num-2}.  Otherwise, we can use Proposition \ref{psi-diff-upper} and the triangle inequality. -/)
   (latexEnv := "theorem")
   (discussion := 844)]
-theorem psi_upper_clean (x : ℝ) (hx : x > 0) : ψ x ≤ 1.11 * x := by sorry
+theorem psi_upper_clean (x : ℝ) (hx : x > 0) : ψ x ≤ 1.11 * x := by
+  have hlog_large : ∀ y : ℝ, 11723 < y → 5 * log y - 5 ≤ (37 / 10000 : ℝ) * y := by
+    intro y hy
+    have hlog_y : log y ≤ log 11723 + (y / 11723 - 1) := by
+      calc log y = log (11723 * (y / 11723)) := by
+              rw [mul_div_cancel₀ _ (by norm_num : (11723 : ℝ) ≠ 0)]
+        _ = log 11723 + log (y / 11723) :=
+              Real.log_mul (by norm_num) (by positivity)
+        _ ≤ log 11723 + (y / 11723 - 1) := by
+              linarith [Real.log_le_sub_one_of_pos (show 0 < y / 11723 by positivity)]
+    have hlog_11723 : log (11723 : ℝ) ≤ 937 / 100 := by interval_decide
+    calc 5 * log y - 5
+        ≤ 5 * (937 / 100 + (y / 11723 - 1)) - 5 := by linarith
+      _ = 5 / 11723 * y + 3685 / 100 := by ring
+      _ ≤ 37 / 10000 * y := by linarith
+  have hNat : ∀ n : ℕ, ψ (n : ℝ) ≤ 1.11 * n := by
+    intro n
+    refine Nat.strong_induction_on n ?_
+    intro n ih
+    by_cases hn0 : n = 0
+    · subst hn0; simp [Chebyshev.psi_eq_zero_of_lt_two (by norm_num : (0 : ℝ) < 2)]
+    · have hn : 0 < n := Nat.pos_of_ne_zero hn0
+      by_cases hsmall : (n : ℝ) ≤ 11723
+      · exact psi_num_2 n (by exact_mod_cast hn) hsmall
+      · push_neg at hsmall
+        let m : ℕ := ⌊(n : ℝ) / 6⌋₊
+        have hm_lt_n : m < n := by
+          exact_mod_cast show (m : ℝ) < n from
+            lt_of_le_of_lt (Nat.floor_le (by positivity)) (by nlinarith)
+        have hpsi_div : ψ ((n : ℝ) / 6) ≤ 1.11 * ((n : ℝ) / 6) := calc
+          ψ ((n : ℝ) / 6) = ψ (m : ℝ) := by simp [m, Chebyshev.psi_eq_psi_coe_floor]
+          _ ≤ 1.11 * (m : ℝ) := ih m hm_lt_n
+          _ ≤ 1.11 * ((n : ℝ) / 6) := by nlinarith [Nat.floor_le (by positivity : 0 ≤ (n : ℝ) / 6)]
+        calc ψ (n : ℝ)
+            ≤ ψ ((n : ℝ) / 6) + a * n + 5 * log (n : ℝ) - 5 := by
+                linarith [psi_diff_upper (n : ℝ) (by linarith)]
+          _ ≤ 1.11 * ((n : ℝ) / 6) + 0.92130 * n + (37 / 10000 : ℝ) * n := by
+                nlinarith [hpsi_div, hlog_large (n : ℝ) hsmall, a_bound.2,
+                  show (0 : ℝ) < n from by exact_mod_cast hn]
+          _ = 1.11 * n := by ring
+  rw [Chebyshev.psi_eq_psi_coe_floor x]
+  calc ψ (⌊x⌋₊ : ℝ) ≤ 1.11 * ⌊x⌋₊ := hNat ⌊x⌋₊
+    _ ≤ 1.11 * x := by nlinarith [Nat.floor_le hx.le]
 
 end Chebyshev

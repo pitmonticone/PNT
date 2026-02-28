@@ -49,12 +49,12 @@ lemma primorial_squarefree (n : ℕ) : Squarefree (primorial n) := by
   simp_rw [Finset.mem_filter];
   exact fun _ h => h.2
 
-theorem zeta_pos_of_prime : ∀ (p : ℕ), Nat.Prime p → (0:ℝ) < (↑ArithmeticFunction.zeta:ArithmeticFunction ℝ) p := by
+theorem zeta_pos_of_prime : ∀ (p : ℕ), Nat.Prime p → (0:ℝ) < (↑ζ:ArithmeticFunction ℝ) p := by
   intro p hp
   rw [ArithmeticFunction.natCoe_apply, ArithmeticFunction.zeta_apply, if_neg (Nat.Prime.ne_zero hp)]
   norm_num
 
-theorem zeta_lt_self_of_prime : ∀ (p : ℕ), Nat.Prime p → (↑ArithmeticFunction.zeta:ArithmeticFunction ℝ) p < (p:ℝ) := by
+theorem zeta_lt_self_of_prime : ∀ (p : ℕ), Nat.Prime p → (↑ζ:ArithmeticFunction ℝ) p < (p:ℝ) := by
   intro p hp
   rw [ArithmeticFunction.natCoe_apply, ArithmeticFunction.zeta_apply, if_neg (Nat.Prime.ne_zero hp)]
   norm_num;
@@ -117,7 +117,7 @@ def CompletelyMultiplicative (f : ArithmeticFunction ℝ) : Prop :=
 
 namespace CompletelyMultiplicative
 open ArithmeticFunction
-theorem zeta : CompletelyMultiplicative ArithmeticFunction.zeta := by
+theorem zeta : CompletelyMultiplicative ζ := by
   unfold CompletelyMultiplicative
   simp_rw [ArithmeticFunction.natCoe_apply, ArithmeticFunction.zeta_apply, one_ne_zero, ite_false,
     mul_eq_zero, Nat.cast_ite, Nat.cast_one, CharP.cast_eq_zero, mul_ite, mul_zero, mul_one,
@@ -461,10 +461,10 @@ theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve) (hP : ∀ p:ℕ, p.Prim
       apply h j i hj.1.1 htj.2 hti.1.1
     exact hij <| Nat.dvd_antisymm hidvdj hjdvdi
 
-theorem boundingSum_ge_sum (s : SelbergSieve) (hnu : s.nu = (ArithmeticFunction.zeta : ArithmeticFunction ℝ).pdiv .id)
+theorem boundingSum_ge_sum (s : SelbergSieve) (hnu : s.nu = (ζ : ArithmeticFunction ℝ).pdiv .id)
   (hP : ∀ p:ℕ, p.Prime → (p:ℝ) ≤ s.level → p ∣ s.prodPrimes) :
     s.selbergBoundingSum ≥ ∑ m ∈ Finset.Icc 1 (Nat.floor <| Real.sqrt s.level), 1 / (m:ℝ) := by
-  trans ∑ m ∈ Finset.Icc 1 (Nat.floor <| Real.sqrt s.level), (ArithmeticFunction.zeta : ArithmeticFunction ℝ).pdiv .id m
+  trans ∑ m ∈ Finset.Icc 1 (Nat.floor <| Real.sqrt s.level), (ζ : ArithmeticFunction ℝ).pdiv .id m
   · rw[←hnu]
     apply selbergBoundingSum_ge_sum_div
     · intro p hpp hple
@@ -493,7 +493,7 @@ theorem boundingSum_ge_sum (s : SelbergSieve) (hnu : s.nu = (ArithmeticFunction.
     ArithmeticFunction.zeta_apply_ne (show m ≠ 0 by omega), Nat.cast_one,
     ArithmeticFunction.id_apply];
 
-theorem boundingSum_ge_log (s : SelbergSieve) (hnu : s.nu = (ArithmeticFunction.zeta : ArithmeticFunction ℝ).pdiv .id)
+theorem boundingSum_ge_log (s : SelbergSieve) (hnu : s.nu = (ζ : ArithmeticFunction ℝ).pdiv .id)
   (hP : ∀ p:ℕ, p.Prime → (p:ℝ) ≤ s.level → p ∣ s.prodPrimes)  :
     s.selbergBoundingSum ≥ Real.log (s.level) / 2 := by
   trans (∑ m ∈ Finset.Icc 1 (Nat.floor <| Real.sqrt s.level), 1 / (m:ℝ))
@@ -509,7 +509,7 @@ theorem boundingSum_ge_log (s : SelbergSieve) (hnu : s.nu = (ArithmeticFunction.
 open ArithmeticFunction
 
 theorem rem_sum_le_of_const (s : SelbergSieve) (C : ℝ) (hrem : ∀ d > 0, |rem (s := s.toBoundingSieve) d| ≤ C) :
-    ∑ d ∈ s.prodPrimes.divisors, (if (d : ℝ) ≤ s.level then (3:ℝ) ^ cardDistinctFactors d * |rem (s := s.toBoundingSieve) d| else 0)
+    ∑ d ∈ s.prodPrimes.divisors, (if (d : ℝ) ≤ s.level then (3:ℝ) ^ ω d * |rem (s := s.toBoundingSieve) d| else 0)
       ≤ C * s.level * (1+Real.log s.level)^3 := by
   rw [←Finset.sum_filter]
   trans (∑ d ∈  Finset.filter (fun d:ℕ => ↑d ≤ s.level) (s.prodPrimes.divisors),  3 ^ ω d * C )

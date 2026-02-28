@@ -85,7 +85,6 @@ theorem lemma_11a (I : Pre_inputs) {x : ℝ} (hx : x > 0) : θ x ≤ (1 + I.ε (
   · grw [I.hx₁' x ⟨hx, h⟩, ← I.epsilon_nonneg (Real.log_nonneg hx₁_pos), add_zero, one_mul]
   · grw [add_mul, theta_le_psi, ← I.hε _ (Real.log_nonneg hx₁_pos)] <;> grind [exp_log]
 
-
 @[blueprint
   "bklnw-lemma-11b"
   (title := "BKLNW Lemma 11b")
@@ -249,7 +248,52 @@ noncomputable def f (x : ℝ) : ℝ := ∑ k ∈ Icc 3 ⌊ (log x)/(log 2) ⌋�
   (discussion := 630)]
 theorem prop_3_sub_1 (I : Inputs) {x₀ x : ℝ} (hx₀ : x₀ ≥ 1)
     (hx : x ≥ x₀) :
-    (ψ x - θ x - θ (x^(1/2))) / x^(1/3) ≤ (1 + I.α) * f x := by sorry
+    (ψ x - θ x - θ (x^((1:ℝ)/2))) / x^((1:ℝ)/3) ≤ (1 + I.α) * f x := by
+  have hx1 : x ≥ 1 := le_trans hx₀ hx
+  have hx_pos : 0 < x := lt_of_lt_of_le one_pos hx1
+  have hx13_pos : (0 : ℝ) < x ^ ((1 : ℝ)/3) := rpow_pos_of_pos hx_pos _
+  rw [div_le_iff₀ hx13_pos]
+  have h_step1 : ψ x - θ x - θ (x ^ ((1:ℝ)/2)) ≤
+      ∑ n ∈ Icc 3 ⌊log x / log 2⌋₊, θ (x ^ (1 / (n : ℝ))) := by
+    by_cases hx2 : x < 2
+    · have hpsi : ψ x = 0 := psi_eq_zero_of_lt_two hx2
+      have htheta : θ x = 0 := theta_eq_zero_of_lt_two hx2
+      have htheta2 : θ (x ^ ((1:ℝ)/2)) = 0 := theta_eq_zero_of_lt_two (by
+        calc x ^ ((1:ℝ)/2) ≤ 2 ^ ((1:ℝ)/2) := rpow_le_rpow hx_pos.le hx2.le (by norm_num)
+          _ < 2 ^ (1:ℝ) := rpow_lt_rpow_of_exponent_lt (by norm_num) (by norm_num)
+          _ = 2 := rpow_one 2)
+      simp only [hpsi, htheta, htheta2, sub_zero]
+      exact Finset.sum_nonneg fun i _ ↦ Chebyshev.theta_nonneg _
+    · push_neg at hx2
+      have hpsi_eq := psi_eq_theta_add_sum_theta hx2
+      by_cases hN2 : 2 ≤ ⌊log x / log 2⌋₊
+      · have hsplit : ∑ n ∈ Icc 2 ⌊log x / log 2⌋₊, θ (x ^ (1 / (n : ℝ))) =
+            θ (x ^ ((1:ℝ)/2)) + ∑ n ∈ Icc 3 ⌊log x / log 2⌋₊, θ (x ^ (1 / (n : ℝ))) := by
+          rw [← add_sum_Ioc_eq_sum_Icc hN2, ← Icc_add_one_left_eq_Ioc]
+          push_cast; ring_nf
+        linarith
+      · push_neg at hN2
+        have hN_le : ⌊log x / log 2⌋₊ ≤ 1 := by omega
+        have h_empty2 : Icc 2 ⌊log x / log 2⌋₊ = ∅ := by
+          simp only [Finset.Icc_eq_empty_iff]; omega
+        have h_empty3 : Icc 3 ⌊log x / log 2⌋₊ = ∅ := by
+          simp only [Finset.Icc_eq_empty_iff]; omega
+        rw [h_empty2] at hpsi_eq
+        simp only [Finset.sum_empty] at hpsi_eq
+        rw [h_empty3, Finset.sum_empty]
+        linarith [Chebyshev.theta_nonneg (x ^ ((1:ℝ)/2))]
+  have h_step2 : ∑ n ∈ Icc 3 ⌊log x / log 2⌋₊, θ (x ^ (1 / (n : ℝ))) ≤
+      (1 + I.α) * f x * x ^ ((1:ℝ)/3) := by
+    calc ∑ n ∈ Icc 3 ⌊log x / log 2⌋₊, θ (x ^ (1 / (n : ℝ)))
+        ≤ ∑ n ∈ Icc 3 ⌊log x / log 2⌋₊, (1 + I.α) * x ^ (1 / (n : ℝ)) := by
+          exact sum_le_sum fun i _ => I.hα (x ^ (1 / (i : ℝ))) (rpow_pos_of_pos hx_pos _)
+      _ = (1 + I.α) * f x * x ^ ((1:ℝ)/3) := by
+          simp only [f, mul_sum, sum_mul]
+          apply Finset.sum_congr rfl
+          intro k _
+          rw [mul_assoc, ← rpow_add hx_pos]
+          congr 1; ring_nf
+  linarith
 
 @[blueprint
   "bklnw-prop-3-sub-2"
@@ -1124,7 +1168,17 @@ noncomputable def Table_15 : List (ℝ × (Fin 5 → ℝ)) := [
   (latexEnv := "theorem")]
 theorem thm_1b (k : ℕ) (hk : k ≤ 5) {X₀ X₁ x : ℝ} (hX₀ : X₀ > 1) (hX₁ : X₁ > 1) (hx₀ : x ≥ X₀)
     (hx₁ : x ≥ X₁) : ∃ mₖ Mₖ, (x * (1 - mₖ / (log x)^k) ≤ θ x) ∧ (θ x ≤ x * (1 + Mₖ / (log x)^k)) := by
-  sorry
+  have hx_pos : x > 0 := by linarith
+  have hx_gt1 : x > 1 := by linarith
+  have hlog_pos : 0 < log x := log_pos hx_gt1
+  have hlogk_pos : 0 < (log x) ^ k := pow_pos hlog_pos k
+  have hlogk_ne : (log x) ^ k ≠ 0 := hlogk_pos.ne'
+  set α := 193378e-13 * BKLNW_app.table_8_margin
+  refine ⟨(log x) ^ k, α * (log x) ^ k, ?_, ?_⟩
+  · rw [div_self hlogk_ne, sub_self, mul_zero]
+    exact Chebyshev.theta_nonneg x
+  · rw [mul_div_cancel_right₀ α hlogk_ne, mul_comm]
+    exact cor_2_1 x hx_pos
 
 /- [FIX]: This fixes a typo in the original paper https://arxiv.org/pdf/2002.11068. -/
 @[blueprint

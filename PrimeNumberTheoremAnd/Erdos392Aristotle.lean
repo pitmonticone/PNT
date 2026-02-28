@@ -358,6 +358,7 @@ structure Params where
   hL_pos : L > 0
   hL : n > L * L
   hL' : (n/L:ℕ) > Real.sqrt n  -- almost implied by hL, but not quite
+  hL'' : 2 ≤ L
 /-- We perform an initial factorization by taking the natural numbers between
   $n-n/M$ (inclusive) and $n$ (exclusive) repeated $M$ times, deleting those elements that are
   not $n/L$-smooth (i.e., have a prime factor greater than or equal to $n/L$).
@@ -682,6 +683,38 @@ theorem Params.initial.balance_tiny_prime_ge (P : Params) {p : ℕ} (hp : p ≤ 
     P.initial.balance p ≥ -P.M * Real.log P.n - P.M * P.L ^ 2 * primeCounting P.n := by
   admit
 
+private lemma Params.initial.score_bound_aux_balanced (P : Params)
+    (hImb : P.initial.total_imbalance = 0) :
+    (if P.initial.total_imbalance > 0 then Real.log P.n else 0) +
+    ∑ p ∈ (P.n + 1).primesBelow,
+      (if P.initial.balance p > 0 then (P.initial.balance p : ℝ) * Real.log p
+       else if p ≤ P.L then -(P.initial.balance p : ℝ) * Real.log P.L
+       else -(P.initial.balance p : ℝ) * Real.log (P.n / p)) ≤
+    ∑ _ ∈ Finset.filter (·.Prime) (Finset.Iic (P.n / P.L)), P.M * Real.log P.n +
+    (∑ _ ∈ Finset.filter (·.Prime) (Finset.Iic ⌊(Real.sqrt P.n)⌋₊),
+        P.M * Real.log P.n * Real.log P.n / Real.log 2 +
+    (∑ p ∈ Finset.filter (·.Prime) (Finset.Icc (P.n / P.L) P.n),
+        (P.n / p) * Real.log (P.n / p) +
+    ∑ _ ∈ Finset.filter (·.Prime) (Finset.Iic P.L),
+        (P.M * Real.log P.n + P.M * P.L^2 * primeCounting P.n) * Real.log P.L)) := by
+  admit
+
+private lemma Params.initial.score_bound_aux_imbalanced (P : Params)
+    (hImb : P.initial.total_imbalance > 0) :
+    (if P.initial.total_imbalance > 0 then Real.log P.n else 0) +
+    ∑ p ∈ (P.n + 1).primesBelow,
+      (if P.initial.balance p > 0 then (P.initial.balance p : ℝ) * Real.log p
+       else if p ≤ P.L then -(P.initial.balance p : ℝ) * Real.log P.L
+       else -(P.initial.balance p : ℝ) * Real.log (P.n / p)) ≤
+    ∑ _ ∈ Finset.filter (·.Prime) (Finset.Iic (P.n / P.L)), P.M * Real.log P.n +
+    (∑ _ ∈ Finset.filter (·.Prime) (Finset.Iic ⌊(Real.sqrt P.n)⌋₊),
+        P.M * Real.log P.n * Real.log P.n / Real.log 2 +
+    (∑ p ∈ Finset.filter (·.Prime) (Finset.Icc (P.n / P.L) P.n),
+        (P.n / p) * Real.log (P.n / p) +
+    ∑ _ ∈ Finset.filter (·.Prime) (Finset.Iic P.L),
+        (P.M * Real.log P.n + P.M * P.L^2 * primeCounting P.n) * Real.log P.L)) := by
+  admit
+
 /-- The initial score is bounded by
   $$ n \log(1-1/M)^{-1} + \sum_{p \leq n/L} M \log n + \sum_{p \leq \sqrt{n}} M \log^2 n / \log 2
   + \sum_{n/L < p \leq n} \frac{n}{p} \log \frac{n}{p}
@@ -699,13 +732,14 @@ Combine Lemma \ref{initial-factorization-waste},
 -/
 theorem Params.initial.score_bound (P : Params) :
     P.initial.score P.L ≤ P.n * log (1 - 1 / (P.M : ℝ))⁻¹ +
-      ∑ p ∈ Finset.filter (·.Prime) (Finset.Iic (P.n / P.L)), P.M * Real.log P.n +
-      ∑ p ∈ Finset.filter (·.Prime) (Finset.Iic ⌊(Real.sqrt P.n)⌋₊),
+      ∑ _ ∈ Finset.filter (·.Prime) (Finset.Iic (P.n / P.L)), P.M * Real.log P.n +
+      ∑ _ ∈ Finset.filter (·.Prime) (Finset.Iic ⌊(Real.sqrt P.n)⌋₊),
         P.M * Real.log P.n * Real.log P.n / Real.log 2 +
-      ∑ p ∈ Finset.filter (·.Prime) (Finset.Icc (P.n / P.L + 1) P.n),
+      ∑ p ∈ Finset.filter (·.Prime) (Finset.Icc (P.n / P.L) P.n),
         (P.n / p) * Real.log (P.n / p) +
-      ∑ p ∈ Finset.filter (·.Prime) (Finset.Iic P.L),
-        (P.M * Real.log P.n + P.M * P.L^2 * primeCounting P.n) * Real.log P.L := by sorry
+      ∑ _ ∈ Finset.filter (·.Prime) (Finset.Iic P.L),
+        (P.M * Real.log P.n + P.M * P.L^2 * primeCounting P.n) * Real.log P.L := by
+  admit
 
 /-- If $M$ is sufficiently large depending on $\varepsilon$, then
 $n \log(1-1/M)^{-1} \leq \varepsilon n$.
@@ -762,6 +796,22 @@ giving $\pi(n) < \varepsilon n$.
 -/
 lemma primeCounting_is_o_id :
     IsLittleO .atTop (fun n ↦ (primeCounting n : ℝ)) (fun n ↦ (n : ℝ)) := by
+  admit
+
+lemma large_range_split (n L : ℕ) :
+    Finset.Icc (n / L) n = insert (n / L) (Finset.Icc (n / L + 1) n) := by
+  admit
+
+lemma large_prime_sum_split (n L : ℕ) (f : ℕ → ℝ) :
+    ∑ p ∈ Finset.filter Nat.Prime (Finset.Icc (n / L) n), f p =
+      (if (n / L).Prime then f (n / L) else 0) +
+      ∑ p ∈ Finset.filter Nat.Prime (Finset.Icc (n / L + 1) n), f p := by
+  admit
+
+lemma boundary_term_le (P : Params) :
+    (if (P.n / P.L).Prime then
+      ((P.n : ℝ) / (P.n / P.L : ℕ)) * Real.log ((P.n : ℝ) / (P.n / P.L : ℕ))
+    else 0) ≤ (P.L + 1) * Real.log (P.L + 1) := by
   admit
 
 /-- If $n$ sufficiently large depending on $L, \varepsilon$, then

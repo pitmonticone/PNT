@@ -1,5 +1,6 @@
 import Mathlib
 import PrimeNumberTheoremAnd.DefsAristotle
+import PrimeNumberTheoremAnd.SecondarySummaryAristotle
 
 /-!
 # Ramanujan's inequality
@@ -36,9 +37,9 @@ $$\epsilon_{M_a} (x) = 72 + 2 M_a + \frac{2M_a+132}{\log x} + \frac{4M_a+288}{\l
 PROVIDED SOLUTION:
 Direct calculation
 -/
-theorem sq_pi_lt (M_a x_a : ℝ) (hupper : ∀ x > x_a, pi x < x * ∑ k ∈ Finset.range 5, (k.factorial / log x ^ (k + 1)) + (M_a * x / log x ^ 6)) (hM_a : M_a > 0) :
-    ∀ x > x_a, pi x ^ 2 < x ^ 2 * (∑ k ∈ Finset.range 5, (k.factorial / log x ^ (k + 1)) + (M_a * x / log x ^ 6) + ε M_a x / log x ^ 7) := by
-    sorry
+theorem sq_pi_lt (M_a x_a : ℝ) (hupper : ∀ x > x_a, pi x < x * ∑ k ∈ Finset.range 5, (k.factorial / log x ^ (k + 1)) + (M_a * x / log x ^ 6)) :
+    ∀ x > x_a, pi x ^ 2 < x ^ 2 * (1 / log x ^ 2 + 2 / log x ^ 3 + 5 / log x ^ 4 + 16 / log x ^ 5 + 64 / log x ^ 6 + ε M_a x / log x ^ 7) := by
+  admit
 
 /-- **Criterion for Ramanujan's inequality, substep 2**
 
@@ -102,6 +103,10 @@ theorem pi_error_identity (x : ℝ) (hx : 2 ≤ x) :
     pi x - Li x = (θ x - x) / log x + 2 / log 2 + ∫ t in Icc 2 x, (θ t - t) / (t * log t ^ 2) := by
   admit
 
+theorem integrable_theta (x : ℝ) :
+    IntegrableOn (fun t ↦ (θ t - t) / (t * log t ^ 2)) (Icc 2 x) volume := by
+  admit
+
 /-- **Upper bound for pi**
 
 Suppose that for $x \geq 2$ we have $|\theta(x)-x|\log^{5} x\leq x a(x)$. Then
@@ -112,9 +117,12 @@ $$ (cf. [reference])
 PROVIDED SOLUTION:
 Follows from Lemma \ref{pi-error-identity} and the triangle inequality.
 -/
-theorem pi_upper (a : ℝ → ℝ) (htheta : ∀ x ≥ 2, abs (θ x - x) * log x ^ 5 ≤ x * a x) (x : ℝ) (hx : 2 ≤ x) :
-    pi x ≤ x / log x + a x * x / log x ^ 6 + ∫ t in Set.Icc 2 x, 1 / log t ^ 2 + ∫ t in Set.Icc 2 x, a t / log t ^ 7 := by
-    sorry
+theorem pi_upper (a : ℝ → ℝ) (htheta : ∀ x ≥ 2, |θ x - x| * log x ^ 5 ≤ x * a x) (x : ℝ)
+    (ha : IntegrableOn (fun t ↦ a t / log t ^ 7) (Icc 2 x) volume)
+    (hx : 2 ≤ x) :
+    pi x ≤ x / log x + a x * x / log x ^ 6 + (∫ t in Icc 2 x, 1 / log t ^ 2)
+    + ∫ t in Icc 2 x, a t / log t ^ 7 := by
+  admit
 
 /-- **Lower bound for pi**
 
@@ -126,9 +134,22 @@ $$ (cf. [reference])
 PROVIDED SOLUTION:
 Follows from Lemma \ref{pi-error-identity} and the triangle inequality.
 -/
-theorem pi_lower (a : ℝ → ℝ) (htheta : ∀ x ≥ 2, abs (θ x - x) * log x ^ 5 ≤ x * a x) (x : ℝ) (hx : 2 ≤ x) :
-    pi x ≥ x / log x - a x * x / log x ^ 6 + ∫ t in Set.Icc 2 x, 1 / log t ^ 2 - ∫ t in Set.Icc 2 x, a t / log t ^ 7 := by
-    sorry
+theorem pi_lower (a : ℝ → ℝ) (htheta : ∀ x ≥ 2, |θ x - x| * log x ^ 5 ≤ x * a x) (x : ℝ)
+    (ha : IntegrableOn (fun t ↦ a t / log t ^ 7) (Icc 2 x) volume)
+    (hx : 2 ≤ x) :
+    pi x ≥ x / log x - a x * x / log x ^ 6 + (∫ t in Icc 2 x, 1 / log t ^ 2) - ∫ t in Icc 2 x, a t / log t ^ 7 := by
+  admit
+
+theorem log_7_IBP (x : ℝ) (hx : 2 ≤ x) :
+    ∫ t in Set.Icc 2 x, 1 / log t ^ 7 =
+      x / log x ^ 7 - 2 / log 2 ^ 7 +
+        7 * ∫ t in Set.Icc 2 x, 1 / log t ^ 8 := by
+  admit
+
+theorem log_8_bound (x : ℝ) (hx : 2 ≤ x) :
+    ∫ t in Set.Icc 2 x, 1 / log t ^ 8 <
+      sqrt x / log 2 ^ 8 + 2 ^ 8 * x / log x ^ 8 := by
+  admit
 
 /-- **Bound for integral of an inverse power of log**
 
@@ -140,19 +161,30 @@ Integrate by parts to write the left-hand side as $\frac{x}{\log^7 x} - \frac{2}
 -/
 theorem log_7_int_bound (x : ℝ) (hx : 2 ≤ x) :
     ∫ t in Set.Icc 2 x, 1 / log t ^ 7 < x / log x ^ 7 + 7 * (sqrt x / log 2 ^ 8 + 2 ^ 8 * x / log x ^ 8) := by
-    sorry
+  admit
+
+-- Native-decide lemma for the computational [3, 599) range
+set_option linter.style.nativeDecide false in
+open LeanCert.Engine.ChebyshevTheta in
+private theorem allThetaChecks_3_599 :
+    checkAllThetaRelErrorReal 3 599 (768 / 1000) 20 = true := by
+  admit
 
 /-- **Error estimate for theta, range 1**
 
-For $2 < x \leq 599$ we have
-$$E_\theta(x) \leq 1 - \frac{\log 3}{3}.$$
+For $2 \leq x < 599$ we have
+$$E_\theta(x) \leq 1 - \frac{\log 2}{3}.$$
 
 PROVIDED SOLUTION:
-This can be verified by direct computation, perhaps breaking $x$ up into intervals.  In [reference] the bound of $(2 - \log 2)/2$ is claimed, but this is actually false for $2 < x < 3$.
+For $x \in [2, 3)$ we have $\theta(x) = \log 2$, so
+$E_\theta(x) = 1 - \log 2 / x < 1 - \log 2 / 3$ since $x < 3$.
+For $x \in [3, 599)$ we use the LeanCert ChebyshevTheta engine:
+\texttt{checkAllThetaRelErrorReal 3 599 (768/1000) 20} via \texttt{native\_decide}
+gives $|\theta(x) - x| \leq 0.768 x$, hence $E_\theta(x) \leq 0.768 \leq 1 - \log 2 / 3$.
 -/
 theorem pi_bound_1 (x : ℝ) (hx : x ∈ Set.Ico 2 599) :
-    Eθ x ≤ 1 - log 3 / 3 := by
-    sorry
+    Eθ x ≤ 1 - log 2 / 3 := by
+  admit
 
 /-- **Error estimate for theta, range 2**
 
@@ -164,7 +196,7 @@ This is [reference].
 -/
 theorem pi_bound_2 (x : ℝ) (hx : x ∈ Set.Ico 599 (exp 58)) :
     Eθ x ≤ log x ^ 2 / (8 * π * sqrt x) := by
-    sorry
+  sorry
 
 /-- **Error estimate for theta, range 3**
 
@@ -188,7 +220,7 @@ This follows from Corollary \ref{pt_cor_1}.
 -/
 theorem pi_bound_4 (x : ℝ) (hx : x ∈ Set.Ico (exp 1169) (exp 2000)) :
     Eθ x ≤ 462.0 * (log x / 5.573412) ^ (1.52 : ℝ) * exp (-1.89 * sqrt (log x / 5.573412)) := by
-    sorry
+  admit
 
 /-- **Error estimate for theta, range 5**
 
@@ -200,8 +232,7 @@ This follows from Corollary \ref{pt_cor_1}.
 -/
 theorem pi_bound_5 (x : ℝ) (hx : x ∈ Set.Ico (exp 2000) (exp 3000)) :
     Eθ x ≤ 411.5 * (log x / 5.573412) ^ (1.52 : ℝ) * exp (-1.89 * sqrt (log x / 5.573412)) := by
-    sorry
-
+  admit
 
 noncomputable def a (x : ℝ) : ℝ := (log x)^5 * (
   if x ∈ Set.Ico 2 599 then 1 - log 2 / 3
@@ -213,13 +244,13 @@ noncomputable def a (x : ℝ) : ℝ := (log x)^5 * (
 /-- **Equation (18) of Platt-Trudgian**
 
 For $x \geq 2$ we have
-$$E_\theta(x) \leq a(x).$$
+$$E_\theta(x) (\log x)^5 \leq a(x).$$
 
 PROVIDED SOLUTION:
 This follows from the previous five sublemmas.
 -/
 theorem pi_bound (x : ℝ) (hx : 2 ≤ x) :
-    Eθ x ≤ a x := by
+    Eθ x * ( log x)^5 ≤ a x := by
     sorry
 
 
@@ -285,9 +316,6 @@ PROVIDED SOLUTION:
 [reference] This follows from the previous lemmas and calculations, including the criterion for Ramanujan's inequality.
 -/
 theorem ramanujan_final : ∀ x > exp 1 * xₐ, pi x ^ 2 < exp 1 * x / log x * pi (x / exp 1) := by
-    sorry
-
-
-
+  admit
 
 end Ramanujan

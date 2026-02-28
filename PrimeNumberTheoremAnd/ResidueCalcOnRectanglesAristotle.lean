@@ -301,17 +301,17 @@ lemma integral_self_div_sq_add_sq (hy : y ≠ 0) : ∫ x in x₁..x₂, x / (x ^
   admit
 
 lemma integral_const_div_sq_add_sq (hy : y ≠ 0) : ∫ x in x₁..x₂, y / (x ^ 2 + y ^ 2) =
-    Real.arctan (x₂ / y) - Real.arctan (x₁ / y) := by
+    arctan (x₂ / y) - arctan (x₁ / y) := by
   admit
 
 lemma integral_const_div_self_add_im (hy : y ≠ 0) : ∫ x : ℝ in x₁..x₂, A / (x + y * I) =
     A * (Real.log (x₂ ^ 2 + y ^ 2) / 2 - Real.log (x₁ ^ 2 + y ^ 2) / 2) -
-    A * I * (Real.arctan (x₂ / y) - Real.arctan (x₁ / y)) := by
+    A * I * (arctan (x₂ / y) - arctan (x₁ / y)) := by
   admit
 
 lemma integral_const_div_re_add_self (hx : x ≠ 0) : ∫ y : ℝ in y₁..y₂, A / (x + y * I) =
     A / I * (Real.log (y₂ ^ 2 + (-x) ^ 2) / 2 - Real.log (y₁ ^ 2 + (-x) ^ 2) / 2) -
-    A / I * I * (Real.arctan (y₂ / -x) - Real.arctan (y₁ / -x)) := by
+    A / I * I * (arctan (y₂ / -x) - arctan (y₁ / -x)) := by
   admit
 
 lemma ResidueTheoremAtOrigin' {z w c : ℂ} (h1 : z.re < 0) (h2 : z.im < 0) (h3 : 0 < w.re) (h4 : 0 < w.im) :

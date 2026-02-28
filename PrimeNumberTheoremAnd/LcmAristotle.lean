@@ -908,7 +908,8 @@ Compute the number of times $p$ divides $L_n$ and use the fundamental theorem of
 -/
 theorem L_eq_prod (n : ℕ) :
     L n = ∏ p ∈ Finset.filter Nat.Prime (Finset.range (n + 1)),
-      p ^ ⌊Real.log n / Real.log p⌋₊ := by sorry
+      p ^ ⌊Real.log n / Real.log p⌋₊ := by
+  admit
 
 /-- **Formula for Chebyshev psi**
 
@@ -919,7 +920,8 @@ Compute the number of times $p$ divides $L_n$ and use the fundamental theorem of
 -/
 theorem psi_eq_prod (n : ℕ) :
     Chebyshev.psi n = ∑ p ∈ Finset.filter Nat.Prime (Finset.range (n + 1)),
-      ⌊Real.log n / Real.log p⌋₊ * Real.log p := by sorry
+      ⌊Real.log n / Real.log p⌋₊ * Real.log p := by
+  admit
 
 /-- **Log of L equals Chebyshev psi**
 
@@ -928,8 +930,7 @@ For every $n$, $\log L_n = \psi(n)$, where $\psi$ is the Chebyshev psi function.
 PROVIDED SOLUTION:
 Combine the previous results.
 -/
-theorem log_L_eq_psi (n : ℕ) : Real.log (L n) = Chebyshev.psi n := by sorry
-
-
+theorem log_L_eq_psi (n : ℕ) : Real.log (L n) = Chebyshev.psi n := by
+  admit
 
 end Lcm

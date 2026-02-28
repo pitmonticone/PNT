@@ -4,6 +4,7 @@ import PrimeNumberTheoremAnd.PrimaryDefinitionsAristotle
 import PrimeNumberTheoremAnd.FioriKadiriSwidinskyAristotle
 import PrimeNumberTheoremAnd.BKLNW_app_tablesAristotle
 import PrimeNumberTheoremAnd.LogTablesAristotle
+import PrimeNumberTheoremAnd.ButheAristotle
 
 /-!
 # Appendix A of BKLNW
@@ -200,7 +201,8 @@ PROVIDED SOLUTION:
 This follows from Theorem \ref{buthe-theorem-2a}. TODO: create a primary Buthe section to place this result
 -/
 theorem bklnw_eq_A_26 (x : ℝ) (hx1 : 100 ≤ x) (hx2 : x ≤ 1e19) :
-  Eψ x ≤ 0.94 / sqrt x := by sorry
+  Eψ x ≤ 0.94 / sqrt x := by
+  admit
 
 /-- **Lemma 15**
 
@@ -247,7 +249,8 @@ By [reference], (A.27) holds with $B_0 = 11$, $B = 10^{19}$, and $c = 0.94$. Thu
 theorem bklnw_cor_15_1 (b : ℝ) (hb1 : log 11 < b) (hb2 : b ≤ 19 * log 10)
   (ε : ℝ → ℝ)
   (hε : ∀ b₀ > 0, ∀ x ≥ exp b₀, Eψ x ≤ ε b₀) :
-  ∀ x ≥ exp b, Eψ x ≤ max (0.94 / exp (b / 2)) (ε (19 * log 10)) := by sorry
+  ∀ x ≥ exp b, Eψ x ≤ max (0.94 / exp (b / 2)) (ε (19 * log 10)) := by
+  admit
 
 /-- **Logan's function**
 

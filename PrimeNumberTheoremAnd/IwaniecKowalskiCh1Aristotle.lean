@@ -170,19 +170,21 @@ lemma d_apply {k n : ℕ} (hk : 0 < k) (hn : n ≠ 0) :
   sorry
 
 
-/-- Divisor power sum with complex exponent.
--/
-noncomputable def sigmaC {R : Type*} [Semiring R] [HPow R R R] (s : R) : ArithmeticFunction R where
+/-- Divisor power sum with exponents in an arbitrary semiring `R`. -/
+noncomputable def sigmaR {R : Type*} [Semiring R] [HPow R R R] (s : R) : ArithmeticFunction R where
   toFun := fun n ↦ ∑ d ∈ n.divisors, (d : R) ^ s
   map_zero' := by admit
 
-/-- For natural exponents, $\sigma_C$ agrees with $\sigma$.
+@[inherit_doc]
+scoped[ArithmeticFunction] notation "σᴿ" => ArithmeticFunction.sigmaR
+
+/-- For natural exponents, $\sigma^R$ agrees with $\sigma$.
 
 PROVIDED SOLUTION:
-The function $\sigma_C$ is defined as the sum of the $s$-th powers of the divisors of $n$. When $s$ is a natural number $k$, this definition coincides with the classical divisor power sum function $\sigma k n$, which also sums the $k$-th powers of the divisors of $n$. Therefore, for natural exponents, we have $\sigma_C k n = \sigma k n$ when we view $\sigma k n$ as a complex number. This can be shown by directly comparing the definitions and noting that both functions sum over the same set of divisors with the same exponentiation.
+The function $\sigma^R$ is defined as the sum of the $s$-th powers of the divisors of $n$. When $s$ is a natural number $k$, this definition coincides with the classical divisor power sum function $\sigma k n$, which also sums the $k$-th powers of the divisors of $n$. Therefore, for natural exponents, we have $\sigma^R k n = \sigma k n$ when we view $\sigma k n$ as a complex number. This can be shown by directly comparing the definitions and noting that both functions sum over the same set of divisors with the same exponentiation.
 -/
-lemma sigmaC_natCast (k : ℕ) (n : ℕ) :
-    sigmaC k n = (σ k n : ℂ) := by
+lemma sigmaR_natCast (k : ℕ) (n : ℕ) :
+    σᴿ k n = (σ k n : ℂ) := by
   sorry
 
 
@@ -192,7 +194,7 @@ PROVIDED SOLUTION:
 The divisor power sum function $\sigma_\nu$ is the Dirichlet convolution of the constant function $1$ (i.e., $\zeta$) and the power function $n \mapsto n^\nu$. The L-series of a Dirichlet convolution is the product of the L-series of the individual functions. Since $L(1, s) = \zeta(s)$ and $L(n \mapsto n^\nu, s) = \zeta(s - \nu)$, we have $L(\sigma_\nu, s) = \zeta(s) \cdot \zeta(s - \nu)$ for $\Re(s) > 1$ and $\Re(s - \nu) > 1$.
 -/
 theorem LSeries_sigma_eq_riemannZeta_mul (ν : ℂ) {s : ℂ} (hs : 1 < s.re) (hsν : 1 < (s - ν).re) :
-    LSeries (↗(sigmaC ν)) s = riemannZeta s * riemannZeta (s - ν) := by
+    LSeries (↗(σᴿ ν)) s = riemannZeta s * riemannZeta (s - ν) := by
   sorry
 
 

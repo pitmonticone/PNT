@@ -26,7 +26,7 @@ By Cauchy's integral formula we know that
   we have that
   $$\left|\frac{r'e^{it}\,f(r'e^{it})}{(r'e^{it}-z)^2}\right|
   \leq\frac{2M(r')^2}{(R-r')(r'-r)^2}.$$
-  Substituting this into Equation (\ref{pickupPoint1}) and evaluating the integral completes the
+  Substituting this into Equation (\ref{pickupPoint0}) and evaluating the integral completes the
   proof.
 -/
 theorem derivativeBound {R M r r' : ℝ} {z : ℂ} {f : ℂ → ℂ}

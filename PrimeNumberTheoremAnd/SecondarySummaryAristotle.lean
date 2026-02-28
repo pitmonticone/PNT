@@ -116,8 +116,8 @@ If $x > 2010760$, then there is a prime in the interval
   \left( x\left(1 - \frac{1}{15697}\right), x \right].
   $$
 -/
-theorem Schoenfeld1976.has_prime_in_interval (x h : ℝ) (hx : x > 2010759.9) :
-  HasPrimeInInterval x (x/15697) := by sorry
+theorem Schoenfeld1976.has_prime_in_interval (x : ℝ) (hx : x > 2010760) :
+    HasPrimeInInterval (x*(1-1/15697)) (x/15697) := by sorry
 
 /-- **Ramaré-Saouter 2003**
 
@@ -167,6 +167,28 @@ If $x > 2,898,242$, then there
 theorem Trudgian2016.has_prime_in_interval (x : ℝ) (hx : x > 2898242) :
     HasPrimeInInterval x (x / (111 * (log x) ^ 2)) := by sorry
 
+/-- **Axler 2018 Theorem 1.4(1)**
+
+If $x ≥ 6034256$, then there
+  is a prime in the interval
+  $$ \left( x, x\left(1 + \frac{0.087}{\log^3 x}\right) \right]. $$
+-/
+theorem Axler2018.has_prime_in_interval_1 (x : ℝ) (hx : x ≥ 6034256) :
+    HasPrimeInInterval x (x * (0.087 / (log x) ^ 3)) := by sorry
+
+/-- **Axler 2018 Theorem 1.4(2)**
+
+If $x >1$, then there
+  is a prime in the interval
+  $$ \left( x, x\left(1 + \frac{198.2}{\log^4 x}\right) \right]. $$
+-/
+theorem Axler2018.has_prime_in_interval_2 (x : ℝ) (hx : x > 1) :
+    HasPrimeInInterval x (x * (198.2 / (log x) ^ 4)) := by sorry
+
+
+def Dusart.proposition_5_4_copy : HasPrimeInInterval.log_thm 89693 3 := Dusart.proposition_5_4
+
+def Dusart.corollary_5_5_copy {x : ℝ} (hx : x ≥ 468991632) : HasPrimeInInterval x (x * (1 + 1 / (5000 * (log x) ^ 2))) := Dusart.corollary_5_5 hx
 /-- **Dudek 2014**
 
 If $x > \exp(\exp(34.32))$, then there is a prime in the interval
@@ -236,7 +258,7 @@ noncomputable def Table_2 : List (ℝ × ℝ × ℝ × ℝ × ℝ × ℝ × ℝ 
 [reference] If $(\log x_0, m, \delta, T_1, \sigma_0, a, \Delta)$ is a row [reference], then for all $x \geq x_0$, there is a prime between $x(1-\Delta^{-1})$ and $x$.
 -/
 theorem has_prime_in_interval (x₀ x m δ T₁ σ₀ a Δ : ℝ) (hx : x ≥ x₀) (hrow : (log x₀, m, δ, T₁, σ₀, a, Δ) ∈ Table_2) :
-    HasPrimeInInterval (x*(1-Δ⁻¹)) (x/Δ) := by sorry
+    HasPrimeInInterval (x*(1- 1 / Δ)) (x/Δ) := by sorry
 
 
 end KadiriLumley

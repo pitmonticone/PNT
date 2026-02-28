@@ -82,7 +82,6 @@ noncomputable def SmoothedChebyshev (SmoothingF : ℝ → ℝ) (ε : ℝ) (X : �
 
 open ComplexConjugate
 
-
 lemma smoothedChebyshevIntegrand_conj
     {SmoothingF : ℝ → ℝ} {ε X : ℝ} (Xpos : 0 < X) (s : ℂ) :
     SmoothedChebyshevIntegrand SmoothingF ε X (conj s) =

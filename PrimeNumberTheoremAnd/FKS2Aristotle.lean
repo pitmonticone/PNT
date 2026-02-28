@@ -187,6 +187,29 @@ theorem remark_15 (x₀ : ℝ) (h : log x₀ ≥ 1000) :
     Eθ.classicalBound (FKS.A x₀) (3/2) 2 5.5666305 x₀ := by sorry
 
 
+theorem l0 {x y : ℝ} (hx : 2 ≤ x) (hy : x ≤ y) :
+    ContinuousOn (fun t ↦ (t * log t ^ 2)⁻¹) (Set.uIcc x y) := by
+  admit
+
+theorem Li_identity {x} (hx : 2 ≤ x) :
+    Li x = x / log x - 2 / log 2 + ∫ t in 2..x, 1 / (log t ^ 2) := by
+  admit
+
+theorem l1 {x y} (hx : 2 ≤ x) (hy : x ≤ y) :
+    IntervalIntegrable (fun t ↦ θ t / (t * log t ^ 2)) volume x y := by
+  admit
+
+theorem l2 {x y} (hx : 2 ≤ x) (hy : x ≤ y) :
+    IntervalIntegrable (fun t ↦ t / (t * log t ^ 2)) volume x y := by
+  admit
+
+theorem he {x} (hx : 2 ≤ x) : pi x - Li x = (θ x - x) / log x + 2 / log 2
+  + ∫ t in 2..x, (θ t - t) / (t * log t ^ 2) := by
+  admit
+
+theorem l3 {x y} (hx : 2 ≤ x) (hy : x ≤ y) :
+    IntervalIntegrable (fun t ↦ (θ t - t) / (t * log t ^ 2)) volume x y := by
+  admit
 
 /-!
 ## From asymptotic estimates on theta to asymptotic estimates on pi
@@ -266,11 +289,12 @@ Now we have
 \end{align*}
 Combining the above completes the proof.
 -/
-theorem lemma_12 {A B C R x₀ x : ℝ} (hEθ : Eθ.classicalBound A B C R x₀) (hx : x ≥ x₀) :
+theorem lemma_12 {A B C R x₀ x : ℝ} (hEθ : Eθ.classicalBound A B C R x₀) (hx : x ≥ x₀)
+    (hx₀ : 2 ≤ x₀) (hR : 0 < R) (hA : 0 ≤ A) (h : 0 ≤ √(log x₀) - C / (2 * √R)) :
   ∫ t in x₀..x, |Eθ t| / log t ^ 2 ≤
     (2 * A) / (R ^ B) * x * max ((log x₀) ^ ((2 * B - 3) / 2)) ((log x) ^ ((2 * B - 3) / 2)) *
-    exp (-C * sqrt (log x / R)) * dawson (sqrt (log x) - C / (2 * sqrt R)) :=
-  sorry
+    exp (-C * sqrt (log x / R)) * dawson (sqrt (log x) - C / (2 * sqrt R)) := by
+  admit
 
 /-- **mu asymptotic function, FKS2 (9)**
 
@@ -385,10 +409,15 @@ theorem proposition_17 {x x₀ : ℝ} (hx : x > x₀) (hx₀ : x₀ > 2) (εψ :
 
 Here we record a way to convert a numerical bound on $E_\theta$ to a numerical bound on $E_\pi$.  We first need some preliminary lemmas.
 -/
+
+theorem Li_identity' {a b : ℝ} (ha : 2 ≤ a) (hb : a ≤ b) :
+    ∫ t in a..b, 1 / log t ^ 2 = Li b - Li a - b / log b + a / log a := by
+  admit
+
 /-- **FKS2 Lemma 19**
 
 Let $x_1 > x_0 \geq 2$, $N \in \N$, and let $(b_i)_{i=1}^N$ be a finite partition of
-  $[x_0,x_1]$.  Then
+  $[\log x_0, \log x_1]$.  Then
   $$ |\int_{x_0}^{x_1} \frac{\theta(t)-t}{t \log^2 t}\ dt|
     \leq \sum_{i=1}^{N-1} \eps_{\theta,num}(e^{b_i})
     ( \Li(e^{b_{i+1}}) - \Li(e^{b_i}) + \frac{e^{b_i}}{b_i} - \frac{e^{b_{i+1}}}{b_{i+1}}).$$
@@ -406,19 +435,18 @@ We split the integral at each $e^{b_i}$ and apply the bound
   $$ \int_a^b \frac{dt}{(\log t)^2}
     = \Li(b) - \frac{b}{\log b} - (\Li(a) - \frac{a}{\log a}). $$
 -/
-theorem lemma_19 {x₀ x₁ : ℝ} (hx₁ : x₁ > x₀) (hx₀ : x₀ ≥ 2)
-  {N : ℕ} (b : Fin (N + 1) → ℝ) (hmono : Monotone b)
-  (h_b_start : b 0 = log x₀)
-  (h_b_end : b (Fin.last N) = log x₁)
+theorem lemma_19 {x₀ x₁ : ℝ} (hx₁ : x₀ < x₁) (hx₀ : x₀ ≥ 2)
+  {N : ℕ} (b : ℕ → ℝ) (hmono : Monotone b)
+  (h_b_start : b 0 = log x₀) (hN : 0 ≤ N)
+  (h_b_end : b N = log x₁)
   (εθ_num : ℝ → ℝ)
-  (h_εθ_num : Eθ.numericalBound x₁ εθ_num) :
+  (h_εθ_num : ∀ i ∈ Finset.Ico 0 N, Eθ.numericalBound (exp (b i)) εθ_num) :
   |∫ t in x₀..x₁, (θ t - t) / (t * log t ^ 2)| ≤
-    ∑ i ∈ Finset.Iio (Fin.last N),
+    ∑ i ∈ Finset.Ico 0 N,
       εθ_num (exp (b i)) *
       (Li (exp (b (i + 1))) - Li (exp (b i)) +
-      exp (b i) / b i - exp (b (i + 1)) / b (i + 1)) :=
-  sorry
-
+      exp (b i) / b i - exp (b (i + 1)) / b (i + 1)) := by
+  admit
 
 lemma hasDerivAt_Li {x : ℝ} (hx : x ∈ Set.Ioi 6.58) : HasDerivAt Li (1 / log x) x := by
   admit

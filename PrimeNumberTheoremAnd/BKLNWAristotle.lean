@@ -159,7 +159,8 @@ Bound each $\theta(x^{1/k})$ term by $(1 + \alpha)x^{1/k}$ in Sublemma \ref{cost
 -/
 theorem prop_3_sub_1 (I : Inputs) {x₀ x : ℝ} (hx₀ : x₀ ≥ 1)
     (hx : x ≥ x₀) :
-    (ψ x - θ x - θ (x^(1/2))) / x^(1/3) ≤ (1 + I.α) * f x := by sorry
+    (ψ x - θ x - θ (x^((1:ℝ)/2))) / x^((1:ℝ)/3) ≤ (1 + I.α) * f x := by
+  admit
 
 /-- **BKLNW Proposition 3, substep 2**
 
@@ -642,8 +643,7 @@ Let $k$ be an integer with $1 \leq k \leq 5$. For any fixed $X_0 > 1$, there exi
 -/
 theorem thm_1b (k : ℕ) (hk : k ≤ 5) {X₀ X₁ x : ℝ} (hX₀ : X₀ > 1) (hX₁ : X₁ > 1) (hx₀ : x ≥ X₀)
     (hx₁ : x ≥ X₁) : ∃ mₖ Mₖ, (x * (1 - mₖ / (log x)^k) ≤ θ x) ∧ (θ x ≤ x * (1 + Mₖ / (log x)^k)) := by
-  sorry
-
+  admit
 
 /- [FIX]: This fixes a typo in the original paper https://arxiv.org/pdf/2002.11068. -/
 /-- **BKLNW Theorem 1b, table form**

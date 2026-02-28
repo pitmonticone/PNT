@@ -1,7 +1,7 @@
 import Architect
 import Mathlib.Topology.Order.Basic
 import Mathlib.NumberTheory.PrimeCounting
-
+import PrimeNumberTheoremAnd.Consequences
 import PrimeNumberTheoremAnd.PrimaryDefinitions
 import PrimeNumberTheoremAnd.Li2Bounds
 
@@ -14,26 +14,8 @@ blueprint_comment /--
 In this section we define the basic types of secondary estimates we will work with in the project.
 -/
 
-open Real Finset
+open Real Finset Topology
 
-/- Standard arithmetic functions. TODO: align this with notation used elsewhere in PNT+ -/
-
-@[blueprint
-  "pi-def"
-  (title := "pi")
-  (statement := /-- $\pi(x)$ is the number of primes less than or equal to $x$. -/)]
-noncomputable def pi (x : ℝ) : ℝ :=  Nat.primeCounting ⌊x⌋₊
-
-open Topology
-
-@[blueprint
-  "li-def"
-  (title := "li and Li")
-  (statement := /-- $\mathrm{li}(x) = \int_0^x \frac{dt}{\log t}$ (in the principal value sense) and $\mathrm{Li}(x) = \int_2^x \frac{dt}{\log t}$. -/)]
-noncomputable def li (x : ℝ) : ℝ := lim ((𝓝[>] (0 : ℝ)).map (fun ε ↦ ∫ t in Set.diff (Set.Ioc 0 x) (Set.Ioo (1-ε) (1+ε)), 1 / log t))
-
-@[blueprint "li-def"]
-noncomputable def Li (x : ℝ) : ℝ := ∫ t in 2..x, 1 / log t
 
 @[blueprint
   "log_upper"
@@ -144,19 +126,6 @@ theorem symm_inv_log
     field
 
 @[blueprint
-  "li-approx"
-  (title := "li approximation")
-  (statement := /-- If $x \geq 2$ and $0 < \eps \leq 1$, then $\mathrm{li}(x) = \int_{[0,x] \backslash [-\eps, \eps]} \frac{dt}{\log t} + O_*( \frac{16\log(4/3)}{3} \eps)$. -/)
-  (proof := /-- Symmetrize the principal value integral around 1 using the previous lemma. -/)
-  (latexEnv := "sublemma")
-  (discussion := 768)]
-theorem li.eq
-    (x ε : ℝ) (hx : x ≥ 2) (hε1 : 0 < ε) (hε2 : ε ≤ 1) : ∃ E,
-    li x = ∫ t in Set.diff (Set.Ioc 0 x) (Set.Ioo (1 - ε) (1 + ε)), 1 / log t + E ∧
-    |E| ≤ 16 *log (4 / 3) / 3 * ε := by
-    sorry
-
-@[blueprint
   "li_minus_Li"
   (title := "li minus Li")
   (statement := /-- $\li(x) - \Li(x) = \li(2)$. -/)
@@ -166,13 +135,32 @@ theorem li.eq
 theorem li.sub_Li
     (x : ℝ) (h2x : 2 ≤ x) :
     li x - Li x = li 2 := by
-    sorry
+  have : Filter.Tendsto (fun ε => ∫ t in Set.Ioc 0 x \ Set.Ioo (1 - ε) (1 + ε), 1 / log t)
+      (𝓝[>] 0) (nhds (Li2Bounds.li2_symmetric + Li x)) := by
+    apply Filter.Tendsto.congr' (f₁ := fun ε ↦ (∫ t in (0:ℝ)..(1 - ε), 1 / log t) + (∫ t in (1 + ε)..2, 1 / log t) + Li x)
+    · filter_upwards [Ioo_mem_nhdsGT (by linarith : (0 : ℝ) < 1)] with ε hε
+      rw [ Li2Bounds.setDiff_integral_eq_split ε x hε.1 hε.2 h2x]
+      unfold Li
+      rw [add_assoc, intervalIntegral.integral_add_adjacent_intervals]
+      all_goals
+        apply ContinuousOn.intervalIntegrable fun t ht ↦ ContinuousAt.continuousWithinAt ?_
+        rw [Set.uIcc_of_le (by grind)] at ht
+        have : log t ≠ 0 := by simp; grind
+        fun_prop (disch := grind)
+    apply Filter.Tendsto.add_const
+    apply Li2Bounds.pv_tendsto_li2_symmetric.congr'
+    filter_upwards [Ioo_mem_nhdsGT (by linarith : (0 : ℝ) < 1)] with ε hε using Li2Bounds.setDiff_integral_eq_split ε 2 hε.1 hε.2 (by rfl)
+  have : li x = Li2Bounds.li2_symmetric + Li x := by
+    exact this.limUnder_eq
+  rw [this, Li2Bounds.li2_symmetric_eq_li2]
+  simp
+  rfl
 
 @[blueprint
   "Ramanujan-Soldner-constant"
   (title := "Ramanujan-Soldner constant")
   (statement := /-- $\li(2) = 1.0451\dots$. -/)
-  (proof := /-- Use Sublemma \ref{li-approx} and some numerical integration. -/)
+  (proof := /-- Symmetrize the integral and use and some numerical integration. -/)
   (latexEnv := "lemma")
   (discussion := 759)]
 theorem li.two_approx : li 2 ∈ Set.Icc 1.0451 1.0452 := by
@@ -206,61 +194,3 @@ theorem li.two_approx_weak : li 2 ∈ Set.Icc 1.039 1.06 := by
 theorem li2_symmetric_eq_li2 : Li2Bounds.li2_symmetric = li 2 := by
   rw [li_eq_Li2Bounds_li]
   exact Li2Bounds.li2_symmetric_eq_li2
-
-
-@[blueprint
-  "theta-def"
-  (title := "theta")
-  (statement := /-- $\theta(x) = \sum_{p \leq x} \log p$ where the sum is over primes $p$. -/)]
-noncomputable def θ (x : ℝ) := Chebyshev.theta x
-
-
-@[blueprint
-  "Epi-def"
-  (title := "Equation (1) of FKS2")
-  (statement := /-- $E_\pi(x) = |\pi(x) - \mathrm{Li}(x)| / \mathrm{Li}(x)$ -/)]
-noncomputable def Eπ (x : ℝ) : ℝ := |pi x - Li x| / (x / log x)
-
-
-@[blueprint
-  "Etheta-def"
-  (title := "Equation (2) of FKS2")
-  (statement := /-- $E_\theta(x) = |\theta(x) - x| / x$ -/)]
-noncomputable def Eθ (x : ℝ) : ℝ := |θ x - x| / x
-
-
-@[blueprint
-  "classical-bound-theta"
-  (title := "Definitions 1, 5, FKS2")
-  (statement := /--
-  We say that $E_\theta$ satisfies a \emph{classical bound} with parameters $A, B, C, R, x_0$ if for all $x \geq x_0$ we have
-  \[ E_\theta(x) \leq A \left(\frac{\log x}{R}\right)^B \exp\left(-C \left(\frac{\log x}{R}\right)^{1/2}\right). \]
-  We say that it obeys a \emph{numerical bound} with parameter $ε(x_0)$ if for all $x \geq x_0$ we have
-  \[ E_\theta(x) \leq ε(x_0). \]
-  -/)]
-def Eθ.classicalBound (A B C R x₀ : ℝ) : Prop := ∀ x ≥ x₀, Eθ x ≤ admissible_bound A B C R x
-
-def Eθ.numericalBound (x₀ : ℝ) (ε : ℝ → ℝ) : Prop := ∀ x ≥ x₀, Eθ x ≤ (ε x₀)
-
-@[blueprint "classical-bound-pi"
-  (title := "Definitions 1, 5, FKS2")
-  (statement := /--
-  We say that $E_\pi$ satisfies a \emph{classical bound} with parameters $A, B, C, R, x_0$ if for all $x \geq x_0$ we have
-  \[ E_\pi(x) \leq A \left(\frac{\log x}{R}\right)^B \exp\left(-C \left(\frac{\log x}{R}\right)^{1/2}\right). \]
-  We say that it obeys a \emph{numerical bound} with parameter $ε(x_0)$ if for all $x \geq x_0$ we have
-  \[ E_\pi(x) \leq ε(x_0). \]
-  -/)]
-def Eπ.classicalBound (A B C R x₀ : ℝ) : Prop := ∀ x ≥ x₀, Eπ x ≤ admissible_bound A B C R x
-
-def Eπ.bound (ε x₀ : ℝ) : Prop := ∀ x ≥ x₀, Eπ x ≤ ε
-
-def Eπ.numericalBound (x₀ : ℝ) (ε : ℝ → ℝ) : Prop := Eπ.bound (ε x₀) x₀
-
-def Eπ.vinogradovBound (A B C x₀ : ℝ) : Prop := ∀ x ≥ x₀, Eπ x ≤ A * (log x) ^ B * exp (-C * (log x) ^ (3/5) / (log (log x)) ^ (1/5))
-
-
-def HasPrimeInInterval (x h : ℝ) : Prop :=
-  ∃ p : ℕ, Nat.Prime p ∧ x < p ∧ p ≤ x + h
-
-def HasPrimeInInterval.log_thm (X₀ : ℝ) (k : ℝ) :=
-  ∀ x ≥ X₀, HasPrimeInInterval x (x / (log x)^k)

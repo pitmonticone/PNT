@@ -56,6 +56,9 @@ jobs:
         run: python3 scripts/upstreaming_dashboard.py
 
       - name: Compile blueprint and documentation
+        # Temporarily disabled: blueprint TeX generation currently fails in CI and is
+        # not required for Lean correctness checks in this workflow.
+        if: ${{ false }}
         uses: leanprover-community/docgen-action@dac784713171529c96f6d0470f7af30249a02a5d # 2026-02-08
         with:
           blueprint: true

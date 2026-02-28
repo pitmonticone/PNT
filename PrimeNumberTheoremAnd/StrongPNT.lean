@@ -1,6 +1,10 @@
 import Architect
+import Mathlib.Algebra.Lie.OfAssociative
+import Mathlib.Analysis.CStarAlgebra.Classes
+import Mathlib.Data.Rat.Cast.OfScientific
+import Mathlib.Data.Real.StarOrdered
+import Mathlib.RingTheory.SimpleRing.Principal
 import PrimeNumberTheoremAnd.BorelCaratheodory
-import PrimeNumberTheoremAnd.DerivativeBound
 import PrimeNumberTheoremAnd.MediumPNT
 
 open Nat Filter Set Function Complex Real ComplexConjugate MeasureTheory
@@ -70,7 +74,7 @@ lemma cauchy_formula_deriv {f : ℂ → ℂ} {R r r' : ℝ}
           \leq\frac{1}{2\pi}\int_0^{2\pi}
           \left|\frac{r'e^{it}\,f(r'e^{it})}{(r'e^{it}-z)^2}\right|\,dt.
     \end{equation}
-    Now applying Theorem \ref{borelCaratheodory_closedBall}, and noting that
+    Now applying Theorem \ref{borelCaratheodory-closedBall}, and noting that
     $r'-r\leq|r'e^{it}-z|$, we have that
     $$\left|\frac{r'e^{it}\,f(r'e^{it})}{(r'e^{it}-z)^2}\right|
       \leq\frac{2M(r')^2}{(R-r')(r'-r)^2}.$$
@@ -181,9 +185,7 @@ theorem BorelCaratheodoryDeriv {M R r : ℝ} {z : ℂ} {f : ℂ → ℂ}
 @[blueprint "PathIntegral"
   (title := "PathIntegral")
   (statement := /--
-    Let $0 < r < R<1$. Let $f:\overline{\mathbb{D}_R}\to\mathbb{C}$ be analytic on
-    neighborhoods of points in $\overline{\mathbb{D}_R}$. Define the functon
-    $I_f:\overline{\mathbb{D}_r}\to\mathbb{C}$ by
+    Let $f:\mathbb{C}\to\mathbb{C}$. Define the functon $I_f:\mathbb{C}\to\mathbb{C}$ by
     $$I_f(z)=z\int_0^1f(tz)\,dt.$$
   -/)
   (latexEnv := "definition")]
@@ -191,12 +193,175 @@ noncomputable def PathIntegral (f : ℂ → ℂ) :
     ℂ → ℂ := fun c ↦ let γ : ℝ → ℂ := fun s ↦ s * c
     ∫ t in 0..1, f (γ t) * (deriv γ) t
 
+/--
+Auxilary lemmas for LogOfAnalyticFunction
+-/
+lemma shiftedMulCont (z : ℂ) (y : ℂ) : Continuous (fun (t : ℝ) ↦ ↑t * (z + y)) := by
+  exact Continuous.mul (Complex.continuous_ofReal) (continuous_const)
+lemma mulContInterval (z : ℂ) : ContinuousOn (fun (x : ℝ) ↦ ↑x * z) (Set.uIcc (0 : ℝ) 1) := by
+  rw[← add_zero z]
+  exact (shiftedMulCont z 0).continuousOn
+lemma shiftedMulContInverval (z : ℂ) (y : ℂ) : ContinuousOn (fun t ↦ ↑t * (z + y)) (Set.uIcc (0 : ℝ) 1) := by
+  exact (shiftedMulCont z y).continuousOn
+
+lemma PathIntegral_IBP {f : ℂ → ℂ} {R : ℝ}
+    (hf : AnalyticOnNhd ℂ f (Metric.ball 0 R)) {z : ℂ} (hz : z ∈ Metric.ball 0 R) :
+    ∫ t in (0 : ℝ)..1, (t : ℂ) * z * deriv f (t * z) = f z - ∫ t in (0 : ℝ)..1, f (t * z) := by
+      rw[mem_ball_iff_norm, sub_zero] at hz;
+      have norm_thing : Set.MapsTo (fun x => ↑x * z) (Set.Icc (0 : ℝ) 1) (Metric.ball 0 R) := by
+        rw[Set.MapsTo];
+        intro x hx
+        rw[Set.mem_Icc] at hx;
+        simp only [mem_ball_iff_norm, sub_zero, Complex.norm_mul, Complex.norm_real, Real.norm_eq_abs]
+        rw[abs_of_nonneg hx.1, ← one_mul R]
+        exact mul_lt_mul' hx.2 hz (norm_nonneg z) Real.zero_lt_one
+      rw [ eq_sub_iff_add_eq', ← intervalIntegral.integral_add ];
+      · rw [ intervalIntegral.integral_eq_sub_of_hasDerivAt ];
+        rotate_right;
+        · use fun x => x * f ( x * z )
+        · norm_num
+        · intro x hx; convert HasDerivAt.mul ( HasDerivAt.ofReal_comp ( hasDerivAt_id x ) ) ( HasDerivAt.comp x ( hf.differentiableOn.differentiableAt ( Metric.isOpen_ball.mem_nhds ?_ ) |> DifferentiableAt.hasDerivAt ) ( HasDerivAt.mul ( hasDerivAt_id _ |> HasDerivAt.ofReal_comp ) ( hasDerivAt_const _ _ ) ) ) using 1 <;> norm_num;
+          · ring_nf;
+          · rw[Set.uIcc_of_le zero_le_one, Set.mem_Icc] at hx
+            rw[abs_of_nonneg hx.1, ← one_mul R]
+            exact mul_lt_mul' hx.2 hz (norm_nonneg z) Real.zero_lt_one
+        · apply ContinuousOn.intervalIntegrable;
+          exact ContinuousOn.add (ContinuousOn.comp ( hf.continuousOn ) (mulContInterval z) (norm_thing.mono_left (Set.uIcc_subset_Icc (unitInterval.zero_mem) (unitInterval.one_mem)))) (ContinuousOn.mul (mulContInterval z) ( ContinuousOn.comp ( show ContinuousOn ( deriv f ) ( Metric.ball 0 R ) from hf.deriv.continuousOn ) (mulContInterval z) (norm_thing.mono_left (Set.uIcc_subset_Icc (unitInterval.zero_mem) (unitInterval.one_mem))) ));
+      · apply ContinuousOn.intervalIntegrable
+        exact ContinuousOn.comp (hf.continuousOn) (mulContInterval z) (norm_thing.mono_left (Set.uIcc_subset_Icc (unitInterval.zero_mem) (unitInterval.one_mem)))
+      · apply ContinuousOn.intervalIntegrable
+        refine ContinuousOn.mul (mulContInterval _) ( ContinuousOn.comp ( show ContinuousOn ( deriv f ) ( Metric.ball 0 R ) from hf.deriv.continuousOn) (mulContInterval _) ?_ );
+        rw[Set.uIcc_of_lt Real.zero_lt_one]
+        exact norm_thing
+
+lemma deriv_integral_of_analytic {f : ℂ → ℂ} {R : ℝ}
+    (hf : AnalyticOnNhd ℂ f (Metric.ball 0 R)) {z : ℂ} (hz : z ∈ Metric.ball 0 R) :
+    HasDerivAt (fun z => ∫ t in (0 : ℝ)..1, f (t * z)) (∫ t in (0 : ℝ)..1, (t : ℂ) * deriv f (t * z)) z := by
+      rw[mem_ball_iff_norm, sub_zero] at hz;
+      have norm_thing' : ∀ y : ℂ, dist y 0 < R - ‖z‖ → Set.MapsTo (fun u ↦ ↑u * (z + y)) (Set.uIcc (0 : ℝ) 1) (Metric.ball 0 R) := by
+        intro y hy
+        rw[dist_eq_norm, sub_zero] at hy
+        simp only [Set.MapsTo, Metric.mem_ball, dist_zero_right, Complex.norm_mul, Complex.norm_real,
+          Real.norm_eq_abs]
+        intro x hx
+        rw[Set.uIcc_of_lt Real.zero_lt_one, Set.mem_Icc] at hx
+        rw[abs_of_nonneg hx.1, ← one_mul R]
+        exact mul_lt_mul' hx.2 (by nlinarith[norm_add_le z y]) (norm_nonneg _) Real.zero_lt_one
+      have norm_thing : Set.MapsTo (fun t ↦ ↑t * z) (Set.uIcc (0 : ℝ) 1) (Metric.ball 0 R) := by
+        have h := norm_thing' 0
+        rw[add_zero, dist_self, sub_pos] at h
+        exact h hz
+      rw [ hasDerivAt_iff_tendsto_slope_zero ];
+      have h_lim : Filter.Tendsto (fun t => ∫ u in (0 : ℝ)..1, (f ((u : ℂ) * (z + t)) - f ((u : ℂ) * z)) / t) (nhdsWithin 0 {0}ᶜ) (nhds (∫ u in (0 : ℝ)..1, (u : ℂ) * deriv f ((u : ℂ) * z))) := by
+        have h_dominate : ∃ M > 0, ∀ t : ℂ, ‖t‖ < (R - ‖z‖) / 2 → ∀ u ∈ Set.Icc (0 : ℝ) 1, ‖(f ((u : ℂ) * (z + t)) - f ((u : ℂ) * z)) / t‖ ≤ M := by
+          obtain ⟨M, hM⟩ : ∃ M > 0, ∀ w ∈ Metric.closedBall 0 (‖z‖ + (R - ‖z‖) / 2), ‖deriv f w‖ ≤ M := by
+            have h_deriv_bound : ContinuousOn (deriv f) (Metric.closedBall 0 (‖z‖ + (R - ‖z‖) / 2)) := by
+              exact (hf.deriv).continuousOn.mono ( Metric.closedBall_subset_ball <| by linarith );
+            obtain ⟨ M, hM ⟩ := IsCompact.exists_bound_of_continuousOn ( ProperSpace.isCompact_closedBall 0 ( ‖z‖ + ( R - ‖z‖ ) / 2 ) ) h_deriv_bound
+            use Max.max M 1
+            exact ⟨lt_max_of_lt_right one_pos, fun w hw => le_trans ( hM w hw ) ( le_max_left _ _ )⟩
+          use M, hM.1;
+          intro t ht u hu
+          have h_int : f (u * (z + t)) - f (u * z) = ∫ s in (0 : ℝ)..1, deriv f (u * z + s * u * t) * u * t := by
+            rw [ intervalIntegral.integral_eq_sub_of_hasDerivAt ];
+            rotate_right;
+            · use fun x => f ( u * z + x * u * t );
+            · simp only [Complex.ofReal_one, one_mul, Complex.ofReal_zero, zero_mul, add_zero, mul_add];
+            · intro x hx; convert HasDerivAt.comp x ( hf.differentiableOn.differentiableAt ( Metric.isOpen_ball.mem_nhds ?_ ) |> DifferentiableAt.hasDerivAt ) ( HasDerivAt.add ( hasDerivAt_const _ _ ) <| HasDerivAt.mul ( HasDerivAt.mul ( hasDerivAt_id _ |> HasDerivAt.ofReal_comp ) <| hasDerivAt_const _ _ ) <| hasDerivAt_const _ _ ) using 1 <;> norm_num ;
+              · ring;
+              · norm_num at *;
+                refine lt_of_le_of_lt ( norm_add_le _ _ ) ?_ ; norm_num [ abs_of_nonneg hu.1, abs_of_nonneg hx.1 ];
+                nlinarith [ mul_nonneg hu.1 hx.1, mul_le_mul_of_nonneg_left hu.2 hx.1, mul_le_mul_of_nonneg_left hx.2 hu.1, norm_nonneg z, norm_nonneg t ];
+            · apply ContinuousOn.intervalIntegrable;
+              refine ContinuousOn.mul ( ContinuousOn.mul ( ContinuousOn.comp ( show ContinuousOn ( deriv f ) ( Metric.ball 0 R ) from hf.deriv.continuousOn ) ?_ ?_ ) continuousOn_const ) continuousOn_const;
+              · exact ContinuousOn.add (continuousOn_const) (ContinuousOn.mul (ContinuousOn.mul (Complex.continuous_ofReal.continuousOn) (continuousOn_const)) (continuousOn_const))
+              · rw[ Set.MapsTo ];
+                intro x hx
+                simp only [Set.uIcc_of_le zero_le_one, Set.mem_Icc] at hx hu
+                rw[mem_ball_iff_norm, sub_zero]
+                calc ‖u * z + x * u * t‖ ≤ ‖u * z‖ + ‖x * u * t‖ := norm_add_le (u * z) (x * u * t)
+                  _ ≤ u * (‖z‖ + x * ‖t‖) := by
+                    simp only [Complex.norm_mul, Complex.norm_real, Real.norm_eq_abs]
+                    rw [abs_of_nonneg hu.1, abs_of_nonneg hx.1, mul_add, mul_left_comm, mul_assoc];
+                  _ < R := by
+                    rw[← one_mul R]
+                    refine mul_lt_mul' hu.2 (by nlinarith[hx, ht]) ?_ Real.zero_lt_one
+                    exact add_nonneg (norm_nonneg z) (mul_nonneg hx.1 (norm_nonneg t))
+          by_cases ht' : t = 0
+          · simp only [ht', add_zero, div_zero, norm_zero]
+            linarith
+          · rw[h_int]
+            simp only [intervalIntegral.integral_mul_const, isUnit_iff_ne_zero, ne_eq, ht',
+              not_false_eq_true, IsUnit.mul_div_cancel_right, Complex.norm_mul, Complex.norm_real,
+              Real.norm_eq_abs, ge_iff_le]
+            rw[Set.mem_Icc] at hu
+            have : M = M * |1 - 0| := by simp only [sub_zero, abs_one, mul_one]
+            rw[abs_of_nonneg hu.1, ← mul_one M, this]
+            refine mul_le_mul ?_ hu.2 hu.1 (by linarith)
+            apply intervalIntegral.norm_integral_le_of_norm_le_const
+            intro x hx
+            apply hM.2
+            rw[mem_closedBall_iff_norm, sub_zero]
+            rw[Set.uIoc_of_le zero_le_one, Set.mem_Ioc] at hx
+            calc ‖u * z + x * u * t‖ ≤ ‖u * z‖ + ‖x * u * t‖ := norm_add_le (u * z) (x * u * t)
+              _ ≤ u * ‖z‖ + x * u * ‖t‖ := by
+                simp only [Complex.norm_mul, Complex.norm_real, Real.norm_eq_abs]
+                rw[abs_of_nonneg hu.1, abs_of_pos hx.1];
+              _ ≤ ‖z‖ + (R - ‖z‖) / 2 := by
+                refine add_le_add (mul_le_of_le_one_left (norm_nonneg z) (hu.2)) ?_
+                rw[← one_mul ((R- ‖z‖) / 2), ← one_mul 1]
+                refine mul_le_mul (mul_le_mul hx.2 hu.2 hu.1 zero_le_one) (le_of_lt ht) (norm_nonneg t) ?_
+                rw[one_mul]
+                exact zero_le_one
+        apply intervalIntegral.tendsto_integral_filter_of_dominated_convergence _ _ _ _ _;
+        · use fun u => h_dominate.choose;
+        · rw [ eventually_nhdsWithin_iff, Metric.eventually_nhds_iff ];
+          refine ⟨ ( R - ‖z‖ ) / 2, half_pos ( sub_pos.mpr <| by simpa using hz ), fun y hy hy' => ?_ ⟩;
+          refine ContinuousOn.aestronglyMeasurable (ContinuousOn.div_const (ContinuousOn.sub ?_ ?_) _) measurableSet_Ioc;
+          · exact ContinuousOn.mono (ContinuousOn.comp (hf.continuousOn) (shiftedMulContInverval z y) (norm_thing' y (by linarith))) (Set.uIoc_subset_uIcc);
+          · exact ContinuousOn.mono (ContinuousOn.comp (hf.continuousOn) (mulContInterval z) (norm_thing)) (Set.uIoc_subset_uIcc);
+        · rw [ eventually_nhdsWithin_iff, Metric.eventually_nhds_iff ];
+          exact ⟨ ( R - ‖z‖ ) / 2, half_pos ( sub_pos.mpr <| by simpa using hz ), fun y hy hy' => Filter.Eventually.of_forall fun x hx => h_dominate.choose_spec.2 y ( by simpa using hy ) x <| by constructor <;> cases Set.mem_uIoc.mp hx <;> linarith ⟩;
+        · simp only [gt_iff_lt, Set.mem_Icc, Complex.norm_div, and_imp, ne_eq, enorm_ne_top,
+          not_false_eq_true, intervalIntegrable_const]
+        · refine Filter.Eventually.of_forall fun x hx => ?_;
+          rw[Set.uIoc_of_le zero_le_one, Set.mem_Ioc] at hx;
+          have h_deriv : HasDerivAt (fun n => f ((x : ℂ) * (z + n))) (x * deriv f ((x : ℂ) * z)) 0 := by
+            convert HasDerivAt.comp 0 ( hf.differentiableOn.differentiableAt ( Metric.isOpen_ball.mem_nhds ?_ ) |> DifferentiableAt.hasDerivAt ) ( HasDerivAt.const_mul ( x : ℂ ) ( hasDerivAt_id 0 |> HasDerivAt.const_add z ) ) using 1
+            · simp only [id_eq, add_zero, mul_one, mul_comm]
+            · simp only [id_eq, add_zero, Metric.mem_ball, dist_zero_right, Complex.norm_mul,
+              Complex.norm_real, Real.norm_eq_abs]
+              rw[abs_of_pos hx.1, ← one_mul R]
+              exact mul_lt_mul' hx.2 hz (norm_nonneg z) Real.zero_lt_one
+          simpa [ div_eq_inv_mul ] using h_deriv.tendsto_slope_zero;
+      refine h_lim.congr' ?_;
+      rw [ Filter.EventuallyEq, eventually_nhdsWithin_iff, Metric.eventually_nhds_iff ];
+      refine ⟨ R - ‖z‖, sub_pos.mpr hz, fun y hy hy' => ?_ ⟩;
+      rw [ ← intervalIntegral.integral_sub ];
+      · simp only [smul_eq_mul, div_eq_inv_mul, intervalIntegral.integral_const_mul]
+      all_goals apply ContinuousOn.intervalIntegrable;
+      · exact ContinuousOn.comp hf.continuousOn (shiftedMulContInverval _ _) (norm_thing' y hy);
+      · exact ContinuousOn.comp hf.continuousOn (mulContInterval _) (norm_thing);
+
+theorem PathIntegral_deriv {f : ℂ → ℂ} {R : ℝ}
+    (hf : AnalyticOnNhd ℂ f (Metric.ball 0 R)) :
+    ∀ z ∈ Metric.ball 0 R, HasDerivAt (PathIntegral f) (f z) z := by
+      intro z hz;
+      convert HasDerivAt.congr_of_eventuallyEq _ ?_ using 1;
+      · exact fun x => x * ( ∫ t in ( 0 : ℝ )..1, f ( t * x ) );
+      · convert HasDerivAt.mul ( hasDerivAt_id z ) ( deriv_integral_of_analytic hf hz ) using 1;
+        have := @PathIntegral_IBP f R hf z hz;
+        simp_all +decide [ mul_assoc, mul_comm, ← intervalIntegral.integral_const_mul ];
+      · filter_upwards [ IsOpen.mem_nhds ( Metric.isOpen_ball ) hz ] with x hx;
+        unfold PathIntegral;
+        norm_num [ mul_comm ];
+
 
 
 @[blueprint "LogOfAnalyticFunction"
   (title := "LogOfAnalyticFunction")
   (statement := /--
-    Let $0 < r < R<1$. Let $B:\overline{\mathbb{D}_R}\to\mathbb{C}$ be analytic on
+    Let $0 < r < R$. Let $B:\overline{\mathbb{D}_R}\to\mathbb{C}$ be analytic on
     neighborhoods of points in $\overline{\mathbb{D}_R}$ with $B(z)\neq 0$ for all
     $z\in\overline{\mathbb{D}_R}$. Then there exists $J_B:\overline{\mathbb{D}_r}\to\mathbb{C}$ that
     is analytic on neighborhoods of points in $\overline{\mathbb{D}_r}$ such that
@@ -222,44 +387,58 @@ noncomputable def PathIntegral (f : ℂ → ℂ) :
     Taking the logarithm of both sides completes the proof.
   -/)
   (latexEnv := "theorem")]
-theorem LogOfAnalyticFunction {r R : ℝ} (zero_lt_r : 0 < r) (r_lt_R : r < R) (R_lt_one : R < 1)
+theorem LogOfAnalyticFunction {r R : ℝ} (zero_lt_r : 0 < r) (r_lt_R : r < R)
     {B : ℂ → ℂ} (BanalyticOnNhdOfDR : AnalyticOnNhd ℂ B (Metric.closedBall (0 : ℂ) R)) (Bnonzero : ∀ z ∈ Metric.closedBall (0 : ℂ) R, B z ≠ 0) :
     ∃ (J_B : ℂ → ℂ),
     (AnalyticOnNhd ℂ J_B (Metric.closedBall 0 r)) ∧
     (J_B 0 = 0) ∧
     (∀ z ∈ Metric.closedBall 0 r, (deriv J_B) z = (deriv B) z / (B z)) ∧
     (∀ z ∈ Metric.closedBall 0 r, Real.log ‖B z‖ - Real.log ‖B 0‖ = (J_B z).re) := by
-    let L : ℂ → ℂ := fun z ↦ deriv B z / B z
-    have LanalyticOnNhdOfDR : AnalyticOnNhd ℂ L (Metric.closedBall (0 : ℂ) R) := AnalyticOnNhd.div (AnalyticOnNhd.deriv BanalyticOnNhdOfDR) BanalyticOnNhdOfDR Bnonzero
-    let J_B : ℂ → ℂ := PathIntegral L
-    use J_B
-    have derivJ_BOnOpenR : ∀ z ∈ Metric.ball 0 R, deriv J_B z = L z := by
-        intro w hw
-        sorry
-    have derivJ_BOnClosedr : ∀ z ∈ Metric.closedBall 0 r, deriv J_B z = L z := by
-        intro w hw
-        apply derivJ_BOnOpenR
-        rw[mem_ball_zero_iff]
-        rw[mem_closedBall_zero_iff] at hw
-        linarith
-    have J_BAnalytic : AnalyticOnNhd ℂ J_B (Metric.closedBall 0 r) := by
-        unfold AnalyticOnNhd
+    -- By `PathIntegral_deriv`, $J_B'(z) = f(z) = B'(z)/B(z)$ for all $z \in B(0, R)$.
+    obtain ⟨J_B, hJB⟩ : ∃ J_B : ℂ → ℂ, (∀ z ∈ Metric.ball 0 R, (HasDerivAt J_B (deriv B z / B z) z)) ∧ J_B 0 = 0 ∧ (∀ z ∈ Metric.ball 0 R, Real.log ‖B z‖ - Real.log ‖B 0‖ = (J_B z).re) := by
+      set f : ℂ → ℂ := fun z => deriv B z / B z;
+      have hf : AnalyticOnNhd ℂ f (Metric.ball 0 R) := by
+        apply_rules [ AnalyticOnNhd.div, BanalyticOnNhdOfDR.deriv ];
+        · apply_rules [ AnalyticOnNhd.deriv, BanalyticOnNhdOfDR ];
+          exact BanalyticOnNhdOfDR.mono <| Metric.ball_subset_closedBall;
+        · exact BanalyticOnNhdOfDR.mono <| Metric.ball_subset_closedBall;
+        · exact fun z hz => Bnonzero z <| Metric.ball_subset_closedBall hz;
+      obtain ⟨J_B, hJB⟩ : ∃ J_B : ℂ → ℂ, (∀ z ∈ Metric.ball 0 R, (HasDerivAt J_B (f z) z)) ∧ J_B 0 = 0 := by
+        use PathIntegral f;
+        exact ⟨ fun z hz => PathIntegral_deriv hf z hz, by unfold PathIntegral; norm_num ⟩;
+      -- Let $H(z) = \exp(J_B(z)) / B(z)$.
+      set H : ℂ → ℂ := fun z => Complex.exp (J_B z) / B z;
+      have hH_deriv : ∀ z ∈ Metric.ball 0 R, HasDerivAt H 0 z := by
         intro z hz
-        have hd : DifferentiableOn ℂ J_B (Metric.ball 0 R) := by
-            sorry
-        have inNhds : Metric.ball 0 R ∈ nhds z := by
-            apply IsOpen.mem_nhds (Metric.isOpen_ball)
-            rw[mem_ball_zero_iff]
-            rw[mem_closedBall_zero_iff] at hz
-            linarith
-        exact DifferentiableOn.analyticAt hd inNhds
-    have J_BZeroAtZero : J_B 0 = 0 := by
-        unfold J_B PathIntegral
-        simp only [mul_zero, deriv_const', intervalIntegral.integral_zero]
-    have J_BLogDiff : ∀ z ∈ Metric.closedBall 0 r, Real.log ‖B z‖ - Real.log ‖B 0‖ = (J_B z).re := by
-        intro w hw
-        sorry
-    exact ⟨J_BAnalytic, J_BZeroAtZero, derivJ_BOnClosedr, J_BLogDiff⟩
+        have hH_deriv : HasDerivAt (fun z => Complex.exp (J_B z)) (Complex.exp (J_B z) * f z) z := by
+          exact HasDerivAt.comp z ( Complex.hasDerivAt_exp _ ) ( hJB.1 z hz );
+        convert HasDerivAt.div hH_deriv ( BanalyticOnNhdOfDR.differentiableOn.differentiableAt ( Metric.closedBall_mem_nhds_of_mem hz ) |> DifferentiableAt.hasDerivAt ) ( Bnonzero z <| Metric.ball_subset_closedBall hz ) using 1 ; ring_nf!;
+        grind;
+      -- Since $H'(z) = 0$, $H(z)$ is constant on $B(0, R)$.
+      have hH_const : ∀ z ∈ Metric.ball 0 R, H z = H 0 := by
+        intro z hz
+        have h_diffOn : DifferentiableOn ℂ H (Metric.ball 0 R) := by
+          intro z hz
+          apply DifferentiableAt.differentiableWithinAt
+          exact HasDerivAt.differentiableAt (hH_deriv z hz)
+        refine Convex.is_const_of_fderivWithin_eq_zero (convex_ball 0 R) h_diffOn ?_ hz (Metric.mem_ball_self (Metric.pos_of_mem_ball hz))
+        intro x hx
+        rw[fderivWithin_of_isOpen Metric.isOpen_ball hx, ← ContinuousLinearMap.toSpanSingleton_zero]
+        exact ((hH_deriv x hx).hasFDerivAt).fderiv
+      -- Taking norms: $\exp(\text{Re}(J_B(z))) = |B(z)|/|B(0)|$.
+      have h_exp_re : ∀ z ∈ Metric.ball 0 R, Real.exp (J_B z).re = ‖B z‖ / ‖B 0‖ := by
+        intro z hz; specialize hH_const z hz
+        simp only [H] at hH_const
+        rw[hJB.2, Complex.exp_zero, one_div, div_eq_iff (Bnonzero z (Metric.ball_subset_closedBall hz)), mul_comm] at hH_const
+        rw[← Complex.norm_exp, ← norm_div, div_eq_mul_inv]
+        exact enorm_eq_iff_norm_eq.mp (congrArg enorm hH_const)
+      exact ⟨ J_B, hJB.1, hJB.2, fun z hz => by rw [ ← Real.log_div ( by specialize Bnonzero z ( Metric.ball_subset_closedBall hz ) ; aesop ) ( by specialize Bnonzero 0 ( by norm_num; linarith ) ; aesop ), ← h_exp_re z hz, Real.log_exp ] ⟩;
+    refine ⟨ J_B, ?_, hJB.2.1, ?_, ?_ ⟩;
+    · intro z hz;
+      apply DifferentiableOn.analyticAt _ _
+      exacts [ Metric.ball 0 R, fun w hw => ( hJB.1 w hw |> HasDerivAt.differentiableAt |> DifferentiableAt.differentiableWithinAt ), Metric.isOpen_ball.mem_nhds <| by simpa using by linarith [ mem_closedBall_zero_iff.mp hz ] ];
+    · exact fun z hz => HasDerivAt.deriv ( hJB.1 z <| Metric.mem_ball.mpr <| lt_of_le_of_lt ( Metric.mem_closedBall.mp hz ) r_lt_R );
+    · exact fun z hz => hJB.2.2 z <| Metric.mem_ball.mpr <| lt_of_le_of_lt ( Metric.mem_closedBall.mp hz ) r_lt_R
 
 
 
@@ -399,9 +578,11 @@ blueprint_comment /--
 
 blueprint_comment /--
 \begin{proof}
-\uses{BlaschkeB, DiskBound}
-    Since $f(0)=1$, we know that $0\not\in\mathcal{K}_f(r)$. Thus,
-    $$C_f(0)=\frac{f(0)}{\displaystyle\prod_{\rho\in\mathcal{K}_f(r)}(-\rho)^{m_f(\rho)}}.$$
+\uses{BlaschkeB, DiskBound, BlaschkeOfZero}
+    Since $f(0)=1$, by Lemma \ref{BlaschkeOfZero} we know that
+    $$|B_f(0)|
+      =|f(0)|\prod_{\rho\in\mathcal{K}_f(r)}\left(\frac{R}{|\rho|}\right)^{m_f(\rho)}
+      =\prod_{\rho\in\mathcal{K}_f(r)}\left(\frac{R}{|\rho|}\right)^{m_f(\rho)}.$$
     Thus, substituting this into Definition \ref{BlaschkeB},
     $$(R/r)^{\sum_{\rho\in\mathcal{K}_f(r)}m_f(\rho)}
       =\prod_{\rho\in\mathcal{K}_f(r)}\left(\frac{R}{r}\right)^{m_f(\rho)}
@@ -514,7 +695,7 @@ blueprint_comment /--
     Let $B>1$ and $0 < r' < r < R' < R<1$. If $f:\mathbb{C}\to\mathbb{C}$ is a function
     analytic on neighborhoods of points in $\overline{\mathbb{D}_1}$ with $f(0)=1$ and
     $|f(z)|\leq B$ for all $|z|\leq R$, then for all
-    $z\in\overline{\mathbb{D}_{R'}}\setminus\mathcal{K}_f(R')$ we have
+    $z\in\overline{\mathbb{D}_{r'}}\setminus\mathcal{K}_f(R')$ we have
     $$\left|\frac{f'}{f}(z)-\sum_{\rho\in\mathcal{K}_f(R')}\frac{m_f(\rho)}{z-\rho}\right|
       \leq\left(\frac{16r^2}{(r-r')^3}+\frac{1}{(R^2/R'-R')\,\log(R/R')}\right)\log B.$$
 \end{theorem}
@@ -535,15 +716,14 @@ blueprint_comment /--
       -\sum_{\rho\in\mathcal{K}_f(R')}m_f(\rho)\,\mathrm{Log}(z-\rho).$$
     Taking the derivative of both sides we have that
     $$\frac{B_f'}{B_f}(z)=\frac{f'}{f}(z)
-      +\sum_{\rho\in\mathcal{K}_f(R')}\frac{m_f(\rho)}{z-R^2/\rho}
+      +\sum_{\rho\in\mathcal{K}_f(R')}\frac{m_f(\rho)}{z-R^2/\overline{\rho}}
       -\sum_{\rho\in\mathcal{K}_f(R')}\frac{m_f(\rho)}{z-\rho}.$$
-    By Definition \ref{JBlaschke} and Theorem \ref{LogOfAnalyticFunction} we recall that
-    $$L_f(z)=J_{B_f}(z)=\mathrm{Log}\,B_f(z)-\mathrm{Log}\,B_f(0).$$
-    Taking the derivative of both sides we have that $L_f'(z)=(B_f'/B_f)(z)$. Thus,
+    By Definition \ref{JBlaschke} and Theorem \ref{LogOfAnalyticFunction},
+    since $L_f(z)=J_{B_f}(z)$ we have $L_f'(z)=J'_{B_f}(z)=(B_f'/B_f)(z)$. Thus,
     $$\frac{f'}{f}(z)-\sum_{\rho\in\mathcal{K}_f(R')}\frac{m_f(\rho)}{z-\rho}
-      =L_f'(z)-\sum_{\rho\in\mathcal{K}_f(R')}\frac{m_f(\rho)}{z-R^2/\rho}.$$
+      =L_f'(z)-\sum_{\rho\in\mathcal{K}_f(R')}\frac{m_f(\rho)}{z-R^2/\overline{\rho}}.$$
     Now since $z\in\overline{\mathbb{D}_{R'}}$ and $\rho\in\mathcal{K}_f(R')$, we know that
-    $R^2/R'-R'\leq|z-R^2/\rho|$. Thus by the triangle inequality we have
+    $R^2/R'-R'\leq|z-R^2/\overline{\rho}|$. Thus by the triangle inequality we have
     $$\left|\frac{f'}{f}(z)-\sum_{\rho\in\mathcal{K}_f(R')}\frac{m_f(\rho)}{z-\rho}\right|
       \leq|L_f'(z)|+\left(\frac{1}{R^2/R'-R'}\right)\sum_{\rho\in\mathcal{K}_f(R')}m_f(\rho).$$
     Now by Theorem \ref{ZerosBound} and \ref{JBlaschkeDerivBound} we get our desired result
@@ -676,7 +856,7 @@ blueprint_comment /--
 \begin{theorem}[LogDerivZetaFinalBound]\label{LogDerivZetaFinalBound}
     Let $t\in\mathbb{R}$ with $|t|\geq 2$ and $0 < r' < r < R' < R<1$. If
     $f(z)=\zeta(z+3/2+it)$, then for all
-    $z\in\overline{\mathbb{D}_R'}\setminus\mathcal{K}_f(R')$ we have that
+    $z\in\overline{\mathbb{D}_{r'}}\setminus\mathcal{K}_f(R')$ we have that
     $$\left|\frac{f'}{f}(z)-\sum_{\rho\in\mathcal{K}_f(R')}\frac{m_f(\rho)}{z-\rho}\right|
       \ll\left(\frac{16r^2}{(r-r')^3}+\frac{1}{(R^2/R'-R')\,\log(R/R')}\right)\log|t|.$$
 \end{theorem}
@@ -724,12 +904,12 @@ blueprint_comment /--
 \begin{proof}
 \uses{LogDerivZetaFinalBound}
     We apply Theorem \ref{LogDerivZetaFinalBound} where $r'=2/3$, $r=3/4$, $R'=5/6$, and
-    $R=8/9$. Thus, for all $z\in\overline{\mathbb{D}_{5/6}}\setminus\mathcal{K}_f(5/6)$
+    $R=8/9$. Thus, for all $z\in\overline{\mathbb{D}_{2/3}}\setminus\mathcal{K}_f(5/6)$
     we have that
     $$\left|\frac{\zeta'}{\zeta}(z+3/2+it)
       -\sum_{\rho\in\mathcal{K}_f(5/6)}\frac{m_f(\rho)}{z-\rho}\right|\ll\log|t|$$
     where $f(z)=\zeta(z+3/2+it)$ for $t\in\mathbb{R}$ with $|t|\geq 3$. Now if we let
-    $z=-1/2+\delta$, then $z\in(-1/2,1/2)\subseteq\overline{\mathbb{D}_{5/6}}$.
+    $z=-1/2+\delta$, then $z\in(-1/2,1/2)\subseteq\overline{\mathbb{D}_{2/3}}$.
     Additionally, $f(z)=\zeta(1+\delta+it)$, where $1+\delta+it$ lies in the zero-free
     region where $\sigma>1$. Thus, $z\not\in\mathcal{K}_f(5/6)$. So,
     $$\left|\frac{\zeta'}{\zeta}(1+\delta+it)
@@ -999,11 +1179,11 @@ blueprint_comment /--
     By Lemma \ref{DeltaRange} we have that
     $$-11/21<-1/2-\delta_t/3\leq\sigma-3/2\leq0.$$
     We apply Theorem \ref{LogDerivZetaFinalBound} where $r'=2/3$, $r=3/4$, $R'=5/6$, and $R=8/9$.
-    Thus for all $z\in\overline{\mathbb{D}_{5/6}}\setminus\mathcal{K}_f(5/6)$ we have that
+    Thus for all $z\in\overline{\mathbb{D}_{2/3}}\setminus\mathcal{K}_f(5/6)$ we have that
     $$\left|\frac{\zeta'}{\zeta}(z+3/2+it)
       -\sum_{\rho\in\mathcal{K}_f(5/6)}\frac{m_f(\rho)}{z-\rho}\right|\ll\log|t|$$
     where $f(z)=\zeta(z+3/2+it)$ for $t\in\mathbb{R}$ with $|t|\geq 3$.
-    Now if we let $z=\sigma-3/2$, then $z\in(-11/21,0)\subseteq\overline{\mathbb{D}_{5/6}}$.
+    Now if we let $z=\sigma-3/2$, then $z\in(-11/21,0)\subseteq\overline{\mathbb{D}_{2/3}}$.
     Additionally, $f(z)=\zeta(\sigma+it)$, where $\sigma+it$ lies in the zero free region given by
     Lemma \ref{ZeroInequality} since $\sigma\geq 1-\delta_t/3\geq 1-\delta_t$.
     Thus, $z\not\in\mathcal{K}_f(5/6)$. So,
@@ -1123,7 +1303,70 @@ lemma FLogTtoDeltaT : ∀ (t : ℝ),
     ring_nf
     exact fun t ↦ trivial
 
-
+/-- The logarithmic derivative of the Riemann zeta function is bounded in the half-plane
+`Re(s) >= 3/2`. -/
+lemma LogDerivZetaBdd_of_Re_ge_three_halves :
+    ∃ C, ∀ (s : ℂ), 3/2 ≤ s.re → ‖deriv riemannZeta s / riemannZeta s‖ ≤ C := by
+  have h_sum_converges : Summable (fun n : ℕ ↦ vonMangoldt n / (n : ℝ) ^ (3 / 2 : ℝ)) := by
+    have h_summable : Summable (fun n : ℕ ↦ (Real.log n : ℝ) / (n : ℝ) ^ (3 / 2 : ℝ)) := by
+      obtain ⟨C, hC_pos, hC⟩ : ∃ C > 0, ∀ n : ℕ, n ≥ 2 → Real.log n ≤ C * (n : ℝ) ^ (1/4 : ℝ) := by
+        use 4, by grind, fun n hn ↦ by
+          have := Real.log_le_sub_one_of_pos (by positivity : 0 < (n : ℝ) ^ (1/4 : ℝ))
+          rw [Real.log_rpow (by positivity)] at this
+          nlinarith [Real.rpow_pos_of_pos (by positivity : 0 < (n : ℝ)) (1/4 : ℝ)]
+      have hBound : ∀ n : ℕ, n ≥ 2 →
+          (Real.log n : ℝ) / (n : ℝ) ^ (3 / 2 : ℝ) ≤ C / (n : ℝ) ^ (5 / 4 : ℝ) := fun n hn ↦ by
+        rw [div_le_div_iff₀ (by positivity) (by positivity)]
+        convert mul_le_mul_of_nonneg_right (hC n hn)
+          (by positivity : 0 ≤ (n : ℝ) ^ (5 / 4 : ℝ)) using 1
+        rw [mul_assoc, ← Real.rpow_add (by positivity)]
+        grind
+      rw [← summable_nat_add_iff 2]
+      exact Summable.of_nonneg_of_le
+        (fun n ↦ div_nonneg (Real.log_nonneg (by grind))
+          (Real.rpow_nonneg (Nat.cast_nonneg _) _))
+        (fun n ↦ hBound _ (by grind))
+        (Summable.mul_left _ <| by simpa using summable_nat_add_iff 2 |>.2 <|
+          Real.summable_one_div_nat_rpow.2 <| by grind)
+    refine .of_nonneg_of_le (fun n ↦ ?_) (fun n ↦ ?_) h_summable
+    · exact div_nonneg (by exact_mod_cast ArithmeticFunction.vonMangoldt_nonneg)
+        (by positivity)
+    · rcases eq_or_ne n 0 with (rfl | hn) <;>
+        simp_all [ArithmeticFunction.vonMangoldt]
+      field_simp
+      split_ifs
+      · exact Real.log_le_log (Nat.cast_pos.mpr (Nat.minFac_pos _))
+          (Nat.cast_le.mpr (Nat.minFac_le (Nat.pos_of_ne_zero hn)))
+      · exact Real.log_nonneg (Nat.one_le_cast.mpr (Nat.pos_of_ne_zero hn))
+  have h_log_deriv_sum : ∀ s : ℂ, 3 / 2 ≤ s.re →
+      deriv riemannZeta s / riemannZeta s = -∑' n : ℕ, (vonMangoldt n : ℂ) / (n : ℂ) ^ s := by
+    intro s hs
+    suffices h : -deriv riemannZeta s / riemannZeta s =
+        ∑' n : ℕ, (vonMangoldt n : ℂ) / (n : ℂ) ^ s by rw [← h, neg_div, neg_neg]
+    exact LogDerivativeDirichlet s (by grind)
+  have h_triangle : ∀ s : ℂ,
+      ‖∑' n : ℕ, (vonMangoldt n : ℂ) / (n : ℂ) ^ s‖ ≤
+        ∑' n : ℕ, ‖(vonMangoldt n : ℂ) / (n : ℂ) ^ s‖ := fun s ↦ by
+    by_cases h : Summable fun n ↦ (ArithmeticFunction.vonMangoldt n : ℂ) / (n : ℂ) ^ s
+    · exact norm_tsum_le_tsum_norm h.norm
+    · simp only [tsum_eq_zero_of_not_summable h, norm_zero]
+      exact tsum_nonneg fun _ ↦ by positivity
+  have h_norm_summand : ∀ s : ℂ, 3 / 2 ≤ s.re → ∀ n : ℕ,
+      ‖(vonMangoldt n : ℂ) / (n : ℂ) ^ s‖ ≤ (vonMangoldt n : ℝ) / (n : ℝ) ^ (3 / 2 : ℝ) := by
+    intro s hs n
+    by_cases hn : n = 0 <;> simp_all [Complex.norm_cpow_of_ne_zero]
+    ring_nf; norm_num
+    rw [abs_of_nonneg ArithmeticFunction.vonMangoldt_nonneg]
+    exact mul_le_mul_of_nonneg_left (inv_anti₀ (by positivity)
+      (Real.rpow_le_rpow_of_exponent_le (mod_cast Nat.one_le_iff_ne_zero.mpr hn) hs))
+      ArithmeticFunction.vonMangoldt_nonneg
+  refine ⟨∑' n : ℕ, (ArithmeticFunction.vonMangoldt n : ℝ) / (n : ℝ) ^ (3 / 2 : ℝ),
+    fun s hs ↦ ?_⟩
+  have hSum : Summable fun n ↦ ‖(vonMangoldt n : ℂ) / (n : ℂ) ^ s‖ :=
+    Summable.of_nonneg_of_le (fun n ↦ by positivity)
+      (fun n ↦ h_norm_summand s hs n) h_sum_converges
+  simpa [neg_div, h_log_deriv_sum s hs] using (h_triangle s).trans
+    (hSum.tsum_le_tsum (fun n ↦ h_norm_summand s hs n) h_sum_converges)
 
 @[blueprint
   (title := "LogDerivZetaUniformLogSquaredBound")
@@ -1148,14 +1391,24 @@ lemma FLogTtoDeltaT : ∀ (t : ℝ),
   -/)
   (proofUses := ["riemannZetaLogDerivResidue", "LogDerivZetaUniformLogSquaredBoundStrip"])
   (latexEnv := "theorem")]
-theorem LogDerivZetaUniformLogSquaredBound : ∃ (C : ℝ) (Cnonneg : 0 ≤ C),
-    ∀ (σ t : ℝ),
-    3 < |t| →
-        σ ∈ Set.Ici (1 - F / Real.log |t|) →
-            ‖ζ' (σ + t * I) / ζ (σ + t * I)‖ ≤ C * Real.log |t| ^ 2 := by
-    sorry
-
-
+theorem LogDerivZetaUniformLogSquaredBound : ∃ (C : ℝ) (_Cnonneg : 0 ≤ C),
+    ∀ (σ t : ℝ), 3 < |t| → σ ∈ Set.Ici (1 - F / Real.log |t|) →
+      ‖ζ' (σ + t * I) / ζ (σ + t * I)‖ ≤ C * Real.log |t| ^ 2 := by
+  obtain ⟨C1, hC1⟩ := LogDerivZetaUniformLogSquaredBoundStripSpec
+  obtain ⟨C2, hC2⟩ := LogDerivZetaBdd_of_Re_ge_three_halves
+  use max C1 C2, le_max_of_le_left hC1.1
+  intro σ t ht hσ
+  by_cases hσ' : σ ≤ 3 / 2
+  · exact (hC1.2 σ t (by grind) ⟨hσ, hσ'⟩).trans
+      (mul_le_mul_of_nonneg_right (le_max_left _ _) (sq_nonneg _))
+  · refine (hC2 _ ?_).trans ?_
+    · norm_num; linarith
+    · have hC2pos := (norm_nonneg _).trans (hC2 2 (by norm_num))
+      exact (le_max_right _ _).trans (le_mul_of_one_le_right
+        (le_max_of_le_right (by grind))
+        (one_le_pow₀ (by
+          rw [Real.le_log_iff_exp_le (by grind)]
+          exact Real.exp_one_lt_d9.le.trans (by grind))))
 
 @[blueprint
   (title := "LogDerivZetaLogSquaredBoundSmallt")
@@ -1236,7 +1489,125 @@ noncomputable def I5New (SmoothingF : ℝ → ℝ) (ε X T : ℝ) : ℂ :=
   (1 / (2 * π * I)) * (I * (∫ t : ℝ in Ici T,
       SmoothedChebyshevIntegrand SmoothingF ε X ((1 + (Real.log X)⁻¹) + t * I)))
 
+lemma IntegralLogSqOverTSqBound : ∃ C > 0, ∀ T, 3 < T →
+  ∫ t in Set.Ici T, (Real.log t)^2 / t^2 ≤ C / Real.sqrt T := by
+    have h_log_sq_le_t_fourth_pow :
+        ∃ C > 0, ∀ t : ℝ, 3 ≤ t → (Real.log t)^2 / t^2 ≤ C / t^(3/2 : ℝ) := by
+      have h_log_sq_le_sqrt :
+          ∃ C > 0, ∀ t : ℝ, 3 ≤ t → Real.log t ^ 2 ≤ C * t ^ (1 / 2 : ℝ) := by
+        have h_log_sq_le_sqrt : ∃ C > 0, ∀ t : ℝ, 3 ≤ t → Real.log t ≤ C * t ^ (1 / 4 : ℝ) := by
+          use 4, by grind, fun t ht ↦ ?_
+          have := Real.log_le_sub_one_of_pos (by positivity : 0 < t ^ (1 / 4 : ℝ))
+          rw [Real.log_rpow (by positivity)] at this; linarith
+        obtain ⟨C, hC₀, hC⟩ := h_log_sq_le_sqrt; use C^2
+        exact ⟨sq_pos_of_pos hC₀, fun t ht ↦
+          (pow_le_pow_left₀ (Real.log_nonneg <| by linarith) (hC t ht) 2).trans <| by
+            rw [mul_pow, ← Real.rpow_natCast, ← Real.rpow_natCast, ← Real.rpow_mul (by linarith)]
+            grind⟩
+      obtain ⟨C, hC_pos, hC⟩ := h_log_sq_le_sqrt; use C
+      refine ⟨hC_pos, fun t ht ↦ ?_⟩; rw [div_le_div_iff₀] <;> try positivity
+      convert mul_le_mul_of_nonneg_right (hC t ht)
+        (Real.rpow_nonneg (by linarith : 0 ≤ t) (3 / 2)) using 1
+      rw [mul_assoc, ← Real.rpow_natCast, ← Real.rpow_add (by linarith)]; grind
+    obtain ⟨C, hC_pos, hC_bound⟩ := h_log_sq_le_t_fourth_pow
+    use C * 2
+    have h_integral_bound :
+        ∀ T : ℝ, 3 < T → ∫ t in Set.Ici T, C / t^(3/2 : ℝ) = C * 2 / Real.sqrt T := by
+      have h_integral_eval :
+          ∀ T : ℝ, 3 < T → ∫ t in Set.Ici T, t ^ (-3 / 2 : ℝ) = 2 / Real.sqrt T := by
+        intro T hT
+        rw [MeasureTheory.integral_Ici_eq_integral_Ioi, integral_Ioi_rpow_of_lt] <;> norm_num
+        · rw [Real.sqrt_eq_rpow, Real.rpow_neg] <;> ring_nf; linarith
+        · linarith
+      intro T hT; convert congr_arg (fun x ↦ C * x) (h_integral_eval T hT) using 1 <;> ring_nf
+      rw [← MeasureTheory.integral_const_mul]
+      refine MeasureTheory.setIntegral_congr_fun measurableSet_Ici fun x hx ↦ ?_
+      rw [← Real.rpow_neg (by linarith [Set.mem_Ici.mp hx])]; ring_nf
+    refine ⟨by positivity, fun T hT ↦ (MeasureTheory.setIntegral_mono_on ?_ ?_ measurableSet_Ici
+        fun t ht ↦ hC_bound t <| by linarith [ht.out]).trans (h_integral_bound T hT |> le_of_eq)⟩
+    · have hInteg : IntegrableOn (fun t ↦ C / t ^ (3 / 2 : ℝ)) (Set.Ici T) := by
+        have := h_integral_bound T hT
+        contrapose! this; rw [MeasureTheory.integral_undef this]; positivity
+      have hMeas : AEStronglyMeasurable (fun t ↦ Real.log t ^ 2 / t ^ 2)
+          (MeasureTheory.volume.restrict (Set.Ici T)) :=
+        Measurable.aestronglyMeasurable <| Measurable.mul
+          (Measurable.pow_const Real.measurable_log _)
+          (Measurable.inv (measurable_id.pow_const _))
+      have hBound : ∀ᵐ t ∂MeasureTheory.volume.restrict (Set.Ici T),
+          ‖Real.log t ^ 2 / t ^ 2‖ ≤ C / t ^ (3 / 2 : ℝ) := by
+        filter_upwards [MeasureTheory.ae_restrict_mem measurableSet_Ici] with t ht
+        rw [Real.norm_of_nonneg (by positivity)]
+        exact hC_bound t (by linarith [ht.out])
+      exact MeasureTheory.Integrable.mono' hInteg hMeas hBound
+    · have := h_integral_bound T hT
+      contrapose! this; rw [MeasureTheory.integral_undef this]; positivity
 
+lemma NormXPowS {X : ℝ} (X_gt_one : 1 < X) {s : ℂ} (hs : s.re = 1 + (Real.log X)⁻¹) :
+    ‖(X : ℂ) ^ s‖ = X * Real.exp 1 := by
+  have hX : 0 < X := by positivity
+  simp only [Complex.norm_cpow_eq_rpow_re_of_pos hX, hs, Real.rpow_add hX, Real.rpow_one,
+    Real.rpow_inv_log hX X_gt_one.ne']
+
+lemma LogDerivZetaBoundForI1 : ∃ C > 0, ∀ {X T : ℝ} (_Xgt3 : 3 < X) (_Tgt3 : 3 < T)
+    (t : ℝ) (_ht : t ≤ -T),
+    let σ := 1 + (Real.log X)⁻¹
+    ‖deriv riemannZeta (σ + t * I) / riemannZeta (σ + t * I)‖ ≤ C * (Real.log (-t))^2 := by
+  obtain ⟨C, hC⟩ := LogDerivZetaUniformLogSquaredBound
+  field_simp
+  use C + 1
+  refine ⟨by grind, fun {X T} hX hT t ht ↦ (hC.2 _ _ ?_ ?_).trans ?_⟩
+  · cases abs_cases t <;> grind
+  · apply Set.mem_Ici.mpr
+    have hX' : 0 ≤ 1 / Real.log X := one_div_nonneg.mpr (Real.log_nonneg (by grind))
+    have ht' : 0 ≤ F / Real.log |t| := by
+      apply div_nonneg (Fequ ▸ div_nonneg (le_of_lt EinIoo.1) zero_le_three)
+      exact Real.log_nonneg (by cases abs_cases t <;> grind)
+    grind
+  · simp only [abs_of_nonpos (by grind : t ≤ 0)]
+    nlinarith [hC.1, sq_nonneg (Real.log (-t))]
+
+lemma I1NewIntegrandBound {SmoothingF : ℝ → ℝ}
+    (suppSmoothingF : Function.support SmoothingF ⊆ Set.Icc (1 / 2) 2)
+    (ContDiffSmoothingF : ContDiff ℝ 1 SmoothingF) :
+    ∃ C > 0, ∀ {ε X T : ℝ} (_εinIoo : ε ∈ Set.Ioo 0 1) (_Xgt3 : 3 < X) (_Tgt3 : 3 < T)
+    (t : ℝ) (_ht : t ≤ -T),
+    ‖SmoothedChebyshevIntegrand SmoothingF ε X (1 + (Real.log X)⁻¹ + t * I)‖ ≤
+    C * (X / ε) * (Real.log (-t))^2 / (-t)^2 := by
+  obtain ⟨C₁, hC₁₀, hC₁⟩ := @LogDerivZetaBoundForI1
+  obtain ⟨C₂, hC₂₀, hC₂⟩ := @MellinOfSmooth1b SmoothingF ContDiffSmoothingF suppSmoothingF
+  refine ⟨C₁ * C₂ * Real.exp 1, by positivity, fun {ε X T} hε hX hT t ht ↦ ?_⟩
+  specialize hC₁ hX hT t ht
+  specialize hC₂ 1 zero_lt_one (1 + (Real.log X)⁻¹ + t * Complex.I) ?_ ?_ ε hε.1 hε.2 <;> norm_num at *
+  · exact Real.log_nonneg (by linarith)
+  · linarith [inv_le_one_of_one_le₀ (show 1 ≤ Real.log X from by
+      rw [Real.le_log_iff_exp_le (by linarith)]
+      exact Real.exp_one_lt_d9.le.trans (by grind))]
+  · refine (mul_le_mul_of_nonneg_right
+        (mul_le_mul hC₁ hC₂ (by positivity) (by positivity)) (by positivity)).trans ?_
+    rw [Complex.norm_cpow_of_ne_zero (by norm_cast; linarith)]
+    norm_num [Complex.normSq, Complex.sq_norm]
+    ring_nf
+    norm_num
+    rw [abs_of_pos (by positivity)]
+    norm_num [Complex.arg]
+    ring_nf
+    norm_num
+    rw [if_pos (by positivity)]
+    norm_num [Real.rpow_add (by positivity : 0 < X), Real.rpow_one]
+    ring_nf
+    norm_num
+    rw [show X ^ (Real.log X)⁻¹ = Real.exp 1 by
+      rw [Real.rpow_def_of_pos (by positivity)]
+      norm_num [Real.exp_ne_zero, ne_of_gt (Real.log_pos (by linarith : 1 < X))]]
+    ring_nf
+    norm_num
+    field_simp
+    gcongr
+    · exact mul_pos (sq_pos_of_neg (by linarith)) hε.1
+    · linarith
+    · exact le_add_of_nonneg_left <| add_nonneg (add_nonneg zero_le_one
+          (div_nonneg zero_le_two (Real.log_nonneg (by linarith))))
+          (div_nonneg zero_le_one (sq_nonneg _))
 
 @[blueprint
   (title := "I1NewBound")
@@ -1263,12 +1634,104 @@ noncomputable def I5New (SmoothingF : ℝ → ℝ) (ε X T : ℝ) : ℂ :=
   (latexEnv := "lemma")]
 lemma I1NewBound {SmoothingF : ℝ → ℝ}
     (suppSmoothingF : Function.support SmoothingF ⊆ Icc (1 / 2) 2)
-    (ContDiffSmoothingF : ContDiff ℝ 1 SmoothingF) : ∃ (C : ℝ) (Cnonneg : 0 ≤ C),
-    ∀ {ε X T : ℝ} (εinIoo : ε ∈ Ioo 0 1) (Xgt3 : 3 < X) (Tgt3 : 3 < T),
+    (ContDiffSmoothingF : ContDiff ℝ 1 SmoothingF) : ∃ (C : ℝ) (_Cnonneg : 0 ≤ C),
+    ∀ {ε X T : ℝ} (_εinIoo : ε ∈ Ioo 0 1) (_Xgt3 : 3 < X) (_Tgt3 : 3 < T),
     ‖I1New SmoothingF ε X T‖ ≤ C * (X / (ε * Real.sqrt T)) := by
-    sorry
-
-
+    have h_I1New_bound : ∃ C > 0, ∀ {ε X T : ℝ} (εinIoo : ε ∈ Set.Ioo 0 1) (Xgt3 : 3 < X)
+        (Tgt3 : 3 < T),
+        ‖∫ t in Set.Iic (-T),
+          SmoothedChebyshevIntegrand SmoothingF ε X (1 + (Real.log X)⁻¹ + t * I)‖ ≤
+          C * (X / ε) * (1 / Real.sqrt T) := by
+            obtain ⟨C₁, hC₁_pos, hC₁⟩ : ∃ C₁ > 0, ∀ {ε X T : ℝ} (εinIoo : ε ∈ Set.Ioo 0 1)
+                (Xgt3 : 3 < X) (Tgt3 : 3 < T)
+                (t : ℝ) (ht : t ≤ -T),
+                ‖SmoothedChebyshevIntegrand SmoothingF ε X (1 + (Real.log X)⁻¹ + t * I)‖ ≤
+                C₁ * (X / ε) * (Real.log (-t))^2 / (-t)^2 :=
+              I1NewIntegrandBound suppSmoothingF ContDiffSmoothingF
+            obtain ⟨C₂, hC₂_pos, hC₂⟩ : ∃ C₂ > 0, ∀ {T : ℝ} (Tgt3 : 3 < T),
+                ∫ t in Set.Ici T, (Real.log t)^2 / t^2 ≤ C₂ / Real.sqrt T :=
+                  IntegralLogSqOverTSqBound
+            refine ⟨C₁ * C₂, mul_pos hC₁_pos hC₂_pos,
+              fun {ε X T} εinIoo Xgt3 Tgt3 ↦
+                (MeasureTheory.norm_integral_le_integral_norm _).trans ?_⟩
+            refine (MeasureTheory.integral_mono_of_nonneg
+              (g := fun t ↦ C₁ * (X / ε) * Real.log (-t) ^ 2 / (-t) ^ 2) ?_ ?_ ?_).trans ?_
+            · exact Filter.Eventually.of_forall fun x ↦ norm_nonneg _
+            · have h_integrable :
+                  MeasureTheory.IntegrableOn (fun t ↦ (Real.log t)^2 / t^2) (Set.Ici T) := by
+                have h_integrable :
+                    MeasureTheory.IntegrableOn
+                      (fun t ↦ (Real.log t)^2 / t^2) (Set.Ioi T) := by
+                  have h_bound : ∀ t, t > T → (Real.log t)^2 / t^2 ≤ 4 / t^(3/2 : ℝ) := by
+                    intro t ht
+                    have h_log_bound : Real.log t ≤ 2 * t^(1/4 : ℝ) := by
+                      have := Real.log_le_sub_one_of_pos (show 0 < t ^ (1 / 4 : ℝ) / 2 by
+                        exact div_pos (Real.rpow_pos_of_pos (by linarith) _) zero_lt_two)
+                      rw [Real.log_div (by exact ne_of_gt (Real.rpow_pos_of_pos (by linarith) _))
+                        (by norm_num), Real.log_rpow (by linarith)] at this
+                      have := Real.log_two_lt_d9; norm_num at *; linarith
+                    rw [div_le_div_iff₀ (by nlinarith)
+                      (Real.rpow_pos_of_pos (by linarith) (3 / 2))]
+                    refine (mul_le_mul_of_nonneg_right (pow_le_pow_left₀
+                      (Real.log_nonneg (by linarith)) h_log_bound 2)
+                      (by exact Real.rpow_nonneg (by linarith) _)).trans ?_
+                    ring_nf
+                    norm_num
+                    rw [← Real.rpow_natCast, ← Real.rpow_mul (by linarith),
+                      ← Real.rpow_add (by linarith)]
+                    norm_num
+                  have h_integrable :
+                      MeasureTheory.IntegrableOn (fun t ↦ 4 / t^(3/2 : ℝ)) (Set.Ioi T) := by
+                    have h_integrable :
+                        MeasureTheory.IntegrableOn (fun t ↦ t ^ (-3 / 2 : ℝ)) (Set.Ioi T) :=
+                      integrableOn_Ioi_rpow_of_lt (by norm_num) (by linarith)
+                    norm_num [div_eq_mul_inv] at *
+                    exact MeasureTheory.Integrable.const_mul (h_integrable.congr_fun
+                      (fun x hx ↦ by rw [Real.rpow_neg (by linarith [hx.out])])
+                      measurableSet_Ioi) _
+                  refine h_integrable.mono' ?_ ?_
+                  · refine ContinuousOn.aestronglyMeasurable ?_ measurableSet_Ioi
+                    have hne : ∀ t ∈ Set.Ioi T, t ≠ 0 := fun t ht ↦ by linarith [ht.out]
+                    have hsq : ∀ t ∈ Set.Ioi T, t ^ 2 ≠ 0 := fun t ht ↦ pow_ne_zero 2 (hne t ht)
+                    fun_prop (discharger := assumption)
+                  · filter_upwards [MeasureTheory.ae_restrict_mem measurableSet_Ioi]
+                      with t ht using by
+                        rw [Real.norm_of_nonneg (by positivity)]
+                        exact h_bound t ht
+                rw [MeasureTheory.IntegrableOn, MeasureTheory.Measure.restrict_congr_set
+                  MeasureTheory.Ioi_ae_eq_Ici] at *
+                simp_all only [one_div, mem_Ioo, ofReal_inv, Complex.norm_mul, Complex.norm_div,
+                  norm_neg, log_neg_eq_log, even_two, Even.neg_pow]
+              have h_integrable : MeasureTheory.IntegrableOn (fun t ↦
+                  (Real.log (-t))^2 / (-t)^2) (Set.Iic (-T)) := by
+                convert h_integrable.comp_neg using 1; norm_num [Set.indicator]
+              simpa only [mul_div_assoc] using h_integrable.const_mul _
+            · filter_upwards [MeasureTheory.ae_restrict_mem measurableSet_Iic] with t ht
+                using hC₁ εinIoo Xgt3 Tgt3 t ht
+            · convert mul_le_mul_of_nonneg_left (hC₂ Tgt3) (show 0 ≤ C₁ * (X / ε) by
+                exact mul_nonneg hC₁_pos.le
+                  (div_nonneg (by positivity) (by linarith [εinIoo.1]))) using 1 <;> ring_nf
+              rw [← MeasureTheory.integral_const_mul, MeasureTheory.integral_Ici_eq_integral_Ioi,
+                ← neg_neg T, ← integral_comp_neg_Iic]
+              norm_num
+              ring_nf
+    obtain ⟨C, hC₀, hC⟩ := h_I1New_bound; use C / (2 * Real.pi)
+    refine ⟨by positivity, fun {ε X T} hε hX hT ↦ ?_⟩
+    simp_all [div_eq_mul_inv, mul_assoc, mul_comm, mul_left_comm]
+    ring_nf at *
+    convert mul_le_mul_of_nonneg_right (hC hε.1 hε.2 hX hT)
+      (show (0 : ℝ) ≤ Real.pi⁻¹ * (1 / 2) by positivity) using 1
+    · simp only [I1New, SmoothedChebyshevIntegrand, norm_mul, norm_inv, Complex.norm_I,
+        Complex.norm_two, mul_one, one_mul, one_div]
+      rw [show ∀ a b : ℝ, (2 * a)⁻¹ * b = b * (a⁻¹ * 2⁻¹) by intro _ _; ring]
+      congr 1
+      · apply congr_arg
+        apply MeasureTheory.setIntegral_congr_fun measurableSet_Iic fun t _ ↦ by
+          rw [show (↑t : ℂ) * I = I * ↑t by ring, div_eq_mul_inv, neg_mul,
+              show (↑(Real.log X)⁻¹ : ℂ) = (↑(Real.log X))⁻¹ from Complex.ofReal_inv _]
+          ring
+      · rw [show ‖(↑π : ℂ)‖ = π from (RCLike.norm_ofReal π).trans (abs_of_pos Real.pi_pos)]
+    · ring
 
 @[blueprint
   (title := "I5NewBound")

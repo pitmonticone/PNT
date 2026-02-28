@@ -48,7 +48,9 @@ jobs:
         uses: leanprover/lean-action@c544e89643240c6b398f14a431bcdc6309e36b3e # v1.4.0
         with:
           use-github-cache: false
-          build-args: :blueprint
+          # Lean 4.24 / current Lake no longer supports the legacy :blueprint facet.
+          # Use the default project build target instead.
+          build-args: PrimeNumberTheoremAnd
 
       - name: Generate upstreaming dashboard
         run: python3 scripts/upstreaming_dashboard.py

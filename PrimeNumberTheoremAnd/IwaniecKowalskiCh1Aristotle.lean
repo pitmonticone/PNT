@@ -1,0 +1,209 @@
+import Mathlib
+
+open ArithmeticFunction hiding log
+
+open Finset Nat Real
+
+open scoped zeta sigma
+
+open scoped LSeries.notation
+
+namespace ArithmeticFunction
+
+/-!
+# Blueprint for Iwaniec-Kowalski Chapter 1
+-/
+
+/-!
+Here we collect facts from Chapter 1 that are not already in Mathlib.
+We will try to upstream as much as possible.
+-/
+
+/-- `τ` (tau) is the divisor count function, equal to `σ 0`. -/
+abbrev tau : ArithmeticFunction ℕ := ArithmeticFunction.sigma 0
+
+@[inherit_doc tau]
+scoped notation "τ" => tau
+
+variable {R : Type*}
+
+/-- Additive arithmetic function: satisfies `f(mn) = f(m) + f(n)` for coprime `m, n`.
+-/
+def IsAdditive [AddZeroClass R] (f : ArithmeticFunction R) : Prop :=
+  ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → Coprime m n → f (m * n) = f m + f n
+/-- Completely additive arithmetic function: satisfies `f(mn) = f(m) + f(n)` for all `m, n ≠ 0`.
+-/
+def IsCompletelyAdditive [AddZeroClass R] (f : ArithmeticFunction R) : Prop :=
+  ∀ {m n}, m ≠ 0 → n ≠ 0 → f (m * n) = f m + f n
+/-- A completely additive function is additive.
+-/
+lemma IsCompletelyAdditive.isAdditive [AddZeroClass R] {f : ArithmeticFunction R}
+    (hf : IsCompletelyAdditive f) : IsAdditive f := by
+  admit
+
+-- **Think about more API for additive/completely additive functions, e.g. `f (p^k) = k * f p` for prime p, etc.**
+
+/-- If `g` is a multiplicative arithmetic function, then for any $n \neq 0$,
+    $\sum_{d | n} \mu(d) \cdot g(d) = \prod_{p \in n.\text{primeFactors}} (1 - g(p))$.
+
+PROVIDED SOLUTION:
+Multiply out and collect terms.
+-/
+theorem sum_moebius_pmul_eq_prod_one_sub {R : Type*} [CommRing R]
+    {g : ArithmeticFunction R} (hg : g.IsMultiplicative) {n : ℕ} (hn : n ≠ 0) :
+    ∑ d ∈ n.divisors, (moebius d : R) * g d = ∏ p ∈ n.primeFactors, (1 - g p) := by
+  admit
+
+
+/-- The Dirichlet convolution of $\zeta$ with itself is $\tau$ (the divisor count function).
+
+PROVIDED SOLUTION:
+By definition of $\zeta$, we have $\zeta(n) = 1$ for all $n \geq 1$. Thus, the Dirichlet convolution
+  $(\zeta * \zeta)(n)$ counts the number of ways to write $n$ as a product of two positive integers,
+  which is exactly the number of divisors of $n$, i.e., $\tau(n)$.
+-/
+theorem zeta_mul_zeta :
+    (ArithmeticFunction.zeta : ArithmeticFunction ℕ) * ArithmeticFunction.zeta = τ := by
+  admit
+
+
+/-- The L-series of $\tau$ equals the square of the Riemann zeta function for $\Re(s) > 1$.
+
+PROVIDED SOLUTION:
+From the previous theorem, we have that the Dirichlet convolution of $\zeta$ with itself is $\tau$.
+  Taking L-series on both sides, we get $L(\tau, s) = L(\zeta, s) \cdot L(\zeta, s)$.
+  Since $L(\zeta, s)$ is the Riemann zeta function $\zeta(s)$, we conclude that
+  $L(\tau, s) = \zeta(s)^2$ for $\Re(s) > 1$.
+-/
+theorem LSeries_tau_eq_riemannZeta_sq {s : ℂ} (hs : 1 < s.re) :
+    LSeries (↗τ) s = riemannZeta s ^ 2 := by
+  admit
+
+/-- $d k$ is the $k$-fold divisor function: the number of ways to write $n$ as an ordered
+    product of $k$ natural numbers. Equivalently, the Dirichlet convolution of $\zeta$ with
+    itself $k$ times.
+-/
+def d (k : ℕ) : ArithmeticFunction ℕ := zeta ^ k
+
+/-- $d 0$ is the multiplicative identity (indicator at 1).
+
+PROVIDED SOLUTION:
+By definition, $d k$ is the $k$-fold Dirichlet convolution of $\zeta$. When $k = 0$, this corresponds to the empty convolution, which is defined to be the multiplicative identity in the algebra of arithmetic functions. The multiplicative identity is the function that takes the value $1$ at $n=1$ and $0$ elsewhere, which can be expressed as $\zeta^0$.
+-/
+theorem d_zero : d 0 = 1 := by
+  admit
+
+/-- $d 1$ is $\zeta$.
+
+PROVIDED SOLUTION:
+By definition, $d k$ is the $k$-fold Dirichlet convolution of $\zeta$. When $k = 1$, this means we are taking the convolution of $\zeta$ with itself once, which simply gives us $\zeta$. Therefore, $d 1 = \zeta^1 = \zeta$.
+-/
+theorem d_one : d 1 = zeta := by
+  admit
+
+/-- $d 2$ is the classical divisor count function $\tau$.
+
+PROVIDED SOLUTION:
+By definition, $d k$ is the $k$-fold Dirichlet convolution of $\zeta$. When $k = 2$, this means we are taking the convolution of $\zeta$ with itself twice, which gives us $\zeta * \zeta$. From the earlier theorem, we know that $\zeta * \zeta = \tau$, where $\tau$ is the divisor count function. Therefore, $d 2 = \zeta^2 = \tau$.
+-/
+theorem d_two : d 2 = τ := by
+  admit
+
+/-- Recurrence: $d (k+1) = d k * \zeta$.
+
+PROVIDED SOLUTION:
+By definition, $d k$ is the $k$-fold Dirichlet convolution of $\zeta$. Therefore, $d (k + 1)$ is the $(k + 1)$-fold convolution of $\zeta$, which can be expressed as the convolution of $d k$ (the $k$-fold convolution) with $\zeta$. Thus, we have $d (k + 1) = d k * \zeta$.
+-/
+theorem d_succ (k : ℕ) : d (k + 1) = d k * zeta := by
+  admit
+
+/-- The $L$-series of $d k$ equals $\zeta(s)^k$ for $\Re(s) > 1$.
+
+PROVIDED SOLUTION:
+From the definition of $d k$ as the $k$-fold Dirichlet convolution of $\zeta$, we can express $d k$ as $\zeta^k$. The L-series of a Dirichlet convolution corresponds to the product of the L-series of the individual functions. Since $L(\zeta, s)$ is the Riemann zeta function $\zeta(s)$, it follows that $L(d k, s) = L(\zeta^k, s) = (L(\zeta, s))^k = \zeta(s)^k$ for $\Re(s) > 1$ where the series converges.
+-/
+theorem LSeries_d_eq_riemannZeta_pow (k : ℕ) {s : ℂ} (hs : 1 < s.re) :
+    LSeries (↗(d k)) s = riemannZeta s ^ k := by
+  admit
+
+
+/-- $d k$ is multiplicative for all $k$. (Is $k \ge1$ needed?)
+
+PROVIDED SOLUTION:
+The function $d k$ is defined as the $k$-fold Dirichlet convolution of $\zeta$. Since $\zeta$ is a multiplicative function, and the Dirichlet convolution of multiplicative functions is also multiplicative, it follows that $d k$ is multiplicative for all $k$. This can be shown by induction on $k$, using the fact that the convolution of a multiplicative function with another multiplicative function remains multiplicative.
+-/
+theorem d_isMultiplicative (k : ℕ) : (d k).IsMultiplicative := by
+  induction k with
+  | zero => rw [d_zero]; exact isMultiplicative_one
+  | succ k ih =>
+    sorry -- follows from IsMultiplicative.pow and isMultiplicative_zeta
+
+
+/-- Explicit formula: $d k (p^a) = (a + k - 1).choose (k - 1)$ for prime $p$ and $k \geq 1$.
+
+PROVIDED SOLUTION:
+The function $d k$ counts the number of ways to write a natural number as an ordered product of $k$ natural numbers. For a prime power $p^a$, the number of ways to factor it into $k$ factors corresponds to the number of non-negative integer solutions to the equation $x_1 + x_2 + ... + x_k = a$, where each $x_i$ represents the exponent of $p$ in the factorization of the corresponding factor. This is a classic combinatorial problem, and the number of solutions is given by the formula $(a + k - 1).choose (k - 1)$, which counts the ways to distribute $a$ indistinguishable items (the prime factors) into $k$ distinguishable boxes (the factors).
+-/
+theorem d_apply_prime_pow {k : ℕ} (hk : 0 < k) {p : ℕ} (hp : p.Prime) (a : ℕ) :
+    d k (p ^ a) = (a + k - 1).choose (k - 1) := by
+  sorry
+
+
+/-- (1.25) in Iwaniec-Kowalski: a formula for $d k$ for all $n$.
+
+PROVIDED SOLUTION:
+The function $d k$ is multiplicative, so to compute $d k(n)$ for a general natural number $n$, we can factor $n$ into its prime power decomposition: $n = p_1^{a_1} p_2^{a_2} ... p_m^{a_m}$. Since $d k$ is multiplicative, we have:
+
+  $$
+  d k(n) = d k(p_1^{a_1}) \cdot d k(p_2^{a_2}) \cdot ... \cdot d k(p_m^{a_m})
+  $$
+
+  Using the explicit formula for prime powers from the previous theorem, we can substitute to get:
+
+  $$
+  d k(n) = \prod_{i=1}^{m} (a_i + k - 1).choose (k - 1)
+  $$
+
+  This gives us a complete formula for $d k(n)$ in terms of the prime factorization of $n$.
+-/
+lemma d_apply {k n : ℕ} (hk : 0 < k) (hn : n ≠ 0) :
+    d k n = ∏ p ∈ n.primeFactors, (n.factorization p + k - 1).choose (k - 1) := by
+  sorry
+
+
+/-- Divisor power sum with exponents in an arbitrary semiring `R`. -/
+noncomputable def sigmaR {R : Type*} [Semiring R] [HPow R R R] (s : R) : ArithmeticFunction R where
+  toFun := fun n ↦ ∑ d ∈ n.divisors, (d : R) ^ s
+  map_zero' := by admit
+
+@[inherit_doc]
+scoped[ArithmeticFunction] notation "σᴿ" => ArithmeticFunction.sigmaR
+
+/-- For natural exponents, $\sigma^R$ agrees with $\sigma$.
+
+PROVIDED SOLUTION:
+The function $\sigma^R$ is defined as the sum of the $s$-th powers of the divisors of $n$. When $s$ is a natural number $k$, this definition coincides with the classical divisor power sum function $\sigma k n$, which also sums the $k$-th powers of the divisors of $n$. Therefore, for natural exponents, we have $\sigma^R k n = \sigma k n$ when we view $\sigma k n$ as a complex number. This can be shown by directly comparing the definitions and noting that both functions sum over the same set of divisors with the same exponentiation.
+-/
+lemma sigmaR_natCast (k : ℕ) (n : ℕ) :
+    σᴿ k n = (ArithmeticFunction.sigma k n : ℂ) := by
+  admit
+
+
+/-- $\zeta(s)\zeta(s - \nu) = \sum_{n=1}^{\infty} \sigma_\nu(n) n^{-s}$ for $\Re(s) > 1$ and $\Re(s - \nu) > 1$.
+
+PROVIDED SOLUTION:
+The divisor power sum function $\sigma_\nu$ is the Dirichlet convolution of the constant function $1$ (i.e., $\zeta$) and the power function $n \mapsto n^\nu$. The L-series of a Dirichlet convolution is the product of the L-series of the individual functions. Since $L(1, s) = \zeta(s)$ and $L(n \mapsto n^\nu, s) = \zeta(s - \nu)$, we have $L(\sigma_\nu, s) = \zeta(s) \cdot \zeta(s - \nu)$ for $\Re(s) > 1$ and $\Re(s - \nu) > 1$.
+-/
+theorem LSeries_sigma_eq_riemannZeta_mul (ν : ℂ) {s : ℂ} (hs : 1 < s.re) (hsν : 1 < (s - ν).re) :
+    LSeries (↗(σᴿ ν)) s = riemannZeta s * riemannZeta (s - ν) := by
+  admit
+
+
+/-
+Serious conversation to be had over zulip:
+
+Do we want to change the `σ` function in Mathlib (NumberTheory.ArithmeticFunction.Misc) to take values in `ℕ` or `ℚ` or `ℝ` or `ℂ`, (like `[RorCLike]` for functions elsewhere) so that we can do the general theory. Alternative: define a second `σ` that plays this
+more general role, and have the current `σ` be a special case of it.
+-/
+
+end ArithmeticFunction

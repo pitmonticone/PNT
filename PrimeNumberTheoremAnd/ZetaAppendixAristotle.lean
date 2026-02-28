@@ -1,0 +1,896 @@
+import Mathlib
+import PrimeNumberTheoremAnd.ZetaBoundsAristotle
+
+/-!
+# Approximating the Riemann zeta function
+-/
+
+/-!
+We want a good explicit estimate on
+$$\sum_{n\leq a} \frac{1}{n^s} - \int_0^{a} \frac{du}{u^s},$$
+for $a$ a half-integer. As it turns out, this is the same problem as that of approximating
+$\zeta(s)$ by a sum $\sum_{n\leq a} n^{-s}$. This is one of the two (The other one is
+the approximate functional equation.) main, standard ways of approximating $\zeta(s)$.
+
+The non-explicit version of the result was first proved in
+[reference]. The proof there uses first-order Euler-Maclaurin
+combined with a decomposition of $\lfloor x\rfloor - x +1/2$ that turns out to be equivalent
+to Poisson summation.
+The exposition in [reference] uses first-order Euler-Maclaurin and
+van de Corput's Process B; the main idea of the latter is Poisson summation.
+
+There are already several explicit versions of the result in the literature.
+In [reference], [reference] and [reference], what we have is successively
+sharper explicit versions of Hardy and Littlewood's original proof.
+The proof in [reference] proceeds simply by a careful estimation of
+the terms in high-order Euler-Maclaurin; it does not use Poisson summation. Finally,
+[reference] is an explicit version of [reference]; it
+gives a weaker bound than [reference] or [reference]. The strongest of these
+results is [reference].
+
+We will give another version here, in part because we wish to relax conditions -- we will
+work with $\left|\Im s\right| < 2\pi a$ rather than $\left|\Im s\right| \leq a$ -- and in
+part to show that one can prove an asymptotically optimal result easily and concisely.
+We will use first-order Euler-Maclaurin and Poisson summation. We assume that $a$ is a
+half-integer; if one inserts the same assumption into [reference],
+one can improve the result there, yielding an error term closer to the one here.
+
+For additional context, see the Zulip discussion at
+https://leanprover.zulipchat.com/\#narrow/channel/423402-PrimeNumberTheorem.2B/
+topic/Let.20us.20formalize.20an.20appendix
+-/
+
+namespace ZetaAppendix
+
+open Real Complex MeasureTheory Finset Filter Topology Set Summable
+
+-- may want to move this to a more globally accessible location
+/-- **e**
+
+We recall that $e(\alpha) = e^{2\pi i \alpha}$.
+-/
+noncomputable def e (α : ℝ) : ℂ := exp (2 * π * I * α)
+
+private lemma h2piI_ne_zero : 2 * π * I ≠ 0 := by
+  admit
+
+private lemma continuousOn_e_comp (φ : ℝ → ℝ) (s : Set ℝ)
+    (hφ : ContinuousOn φ s) : ContinuousOn (fun t ↦ e (φ t)) s := by
+  admit
+
+private lemma continuousOn_ofReal_deriv (φ : ℝ → ℝ) (a b : ℝ)
+    (hderiv_cont : ContinuousOn (fun t ↦ deriv φ t) (Set.Icc a b)) :
+    ContinuousOn (fun t ↦ (↑(deriv φ t) : ℂ)) (Set.Icc a b) := by
+  admit
+
+private lemma denom1_ne_zero (φ : ℝ → ℝ) (a b : ℝ)
+    (hphi_ne : ∀ t ∈ Set.Icc a b, deriv φ t ≠ 0) :
+    ∀ t ∈ Set.Icc a b, 2 * π * I * ↑(deriv φ t) ≠ 0 := by
+  admit
+
+private lemma denom2_ne_zero (φ : ℝ → ℝ) (a b : ℝ)
+    (hphi_ne : ∀ t ∈ Set.Icc a b, deriv φ t ≠ 0) :
+    ∀ t ∈ Set.Icc a b, 2 * π * I * ↑(deriv φ t) ^ 2 ≠ 0 := by
+  admit
+
+private lemma continuousOn_denom1 (φ : ℝ → ℝ) (a b : ℝ)
+    (hderiv_cont : ContinuousOn (fun t ↦ deriv φ t) (Set.Icc a b)) :
+    ContinuousOn (fun t ↦ 2 * π * I * ↑(deriv φ t)) (Set.Icc a b) := by
+  admit
+
+private lemma continuousOn_denom2 (φ : ℝ → ℝ) (a b : ℝ)
+    (hderiv_cont : ContinuousOn (fun t ↦ deriv φ t) (Set.Icc a b)) :
+    ContinuousOn (fun t ↦ 2 * π * I * ↑(deriv φ t) ^ 2) (Set.Icc a b) := by
+  admit
+
+private lemma intervalIntegrable_v' (φ : ℝ → ℝ) (a b : ℝ) (hab : a ≤ b)
+    (hφ_cont : ContinuousOn φ (Set.Icc a b))
+    (hderiv_cont : ContinuousOn (fun t ↦ deriv φ t) (Set.Icc a b)) :
+    IntervalIntegrable (fun t ↦ 2 * π * I * ↑(deriv φ t) * e (φ t)) volume a b := by
+  admit
+
+private lemma continuousOn_rpow_const_Icc (a b p : ℝ) (ha_pos : 0 < a) :
+    ContinuousOn (fun t ↦ t ^ p) (Set.Icc a b) := by
+  admit
+
+private lemma continuousOn_rpow_toComplex (a b p : ℝ) (ha_pos : 0 < a) :
+    ContinuousOn (fun t ↦ ((t ^ p : ℝ) : ℂ)) (Set.Icc a b) := by
+  admit
+
+private lemma intervalIntegrable_term1 (σ : ℝ) (φ : ℝ → ℝ) (a b : ℝ) (hab : a ≤ b) (ha_pos : 0 < a)
+    (hφ_cont : ContinuousOn φ (Set.Icc a b))
+    (hderiv_cont : ContinuousOn (fun t ↦ deriv φ t) (Set.Icc a b))
+    (hphi_ne : ∀ t ∈ Set.Icc a b, deriv φ t ≠ 0) :
+    IntervalIntegrable
+      (fun x ↦ (x ^ (-σ - 1) : ℝ) / (2 * π * I * ↑(deriv φ x)) * e (φ x)) volume a b := by
+  admit
+
+private lemma intervalIntegrable_term2 (σ : ℝ) (φ : ℝ → ℝ) (a b : ℝ) (hab : a ≤ b) (ha_pos : 0 < a)
+    (hφ_cont : ContinuousOn φ (Set.Icc a b))
+    (hderiv_cont : ContinuousOn (fun t ↦ deriv φ t) (Set.Icc a b))
+    (hderiv2_cont : ContinuousOn (fun t ↦ deriv (deriv φ) t) (Set.Icc a b))
+    (hphi_ne : ∀ t ∈ Set.Icc a b, deriv φ t ≠ 0) :
+    IntervalIntegrable
+      (fun x ↦ (x ^ (-σ) : ℝ) * ↑(deriv (deriv φ) x) /
+        (2 * π * I * ↑(deriv φ x) ^ 2) * e (φ x)) volume a b := by
+  admit
+
+private lemma intervalIntegrable_u' (σ : ℝ) (φ : ℝ → ℝ) (a b : ℝ) (hab : a ≤ b) (ha_pos : 0 < a)
+    (hderiv_cont : ContinuousOn (fun t ↦ deriv φ t) (Set.Icc a b))
+    (hderiv2_cont : ContinuousOn (fun t ↦ deriv (deriv φ) t) (Set.Icc a b))
+    (hphi_ne : ∀ t ∈ Set.Icc a b, deriv φ t ≠ 0) :
+    IntervalIntegrable
+      (fun t ↦ (-σ * t ^ (-σ - 1) : ℝ) / (2 * π * I * ↑(deriv φ t)) +
+        (t ^ (-σ) : ℝ) * (-↑(deriv (deriv φ) t) / (2 * π * I * ↑(deriv φ t) ^ 2)))
+      volume a b := by
+  admit
+
+private lemma hasDerivAt_inv_phaseDeriv (φ : ℝ → ℝ) (t : ℝ)
+    (hdiff2 : DifferentiableAt ℝ (deriv φ) t) (hne : deriv φ t ≠ 0) :
+    HasDerivAt (fun x ↦ (1 : ℂ) / (2 * π * I * ↑(deriv φ x)))
+      (-↑(deriv (deriv φ) t) / (2 * π * I * ↑(deriv φ t) ^ 2)) t := by
+  admit
+
+private lemma hasDerivAt_u_full (σ : ℝ) (φ : ℝ → ℝ) (t : ℝ) (ht : 0 < t)
+    (hdiff2 : DifferentiableAt ℝ (deriv φ) t) (hne : deriv φ t ≠ 0) :
+    HasDerivAt (fun x ↦ ((x ^ (-σ) : ℝ) : ℂ) / (2 * π * I * ↑(deriv φ x)))
+      (((-σ * t ^ (-σ - 1) : ℝ) : ℂ) / (2 * π * I * ↑(deriv φ t)) +
+       ((t ^ (-σ) : ℝ) : ℂ) * (-↑(deriv (deriv φ) t) / (2 * π * I * ↑(deriv φ t) ^ 2))) t := by
+  admit
+
+private lemma hasDerivAt_e_comp (φ : ℝ → ℝ) (t : ℝ) (hdiff : DifferentiableAt ℝ φ t) :
+    HasDerivAt (fun x ↦ e (φ x)) (2 * π * I * ↑(deriv φ t) * e (φ t)) t := by
+  admit
+
+private lemma integral_Icc_eq_interval {a b : ℝ} (h : a ≤ b) (f : ℝ → ℂ) :
+    ∫ t in Set.Icc a b, f t = ∫ t in a..b, f t := by
+  admit
+
+theorem integral_power_phase_ibp (σ : ℝ) (φ : ℝ → ℝ) (a b : ℝ) (hab : a < b) (ha_pos : 0 < a)
+    (h_phi_ne : ∀ t ∈ Set.Icc a b, deriv φ t ≠ 0)
+    (h_phi_diff : ∀ t ∈ Set.Icc a b, DifferentiableAt ℝ φ t)
+    (h_phi_diff2 : ∀ t ∈ Set.Icc a b, DifferentiableAt ℝ (deriv φ) t)
+    (h_phi_cont : ContinuousOn φ (Set.Icc a b))
+    (h_deriv_cont : ContinuousOn (fun t ↦ deriv φ t) (Set.Icc a b))
+    (h_deriv2_cont : ContinuousOn (fun t ↦ deriv (deriv φ) t) (Set.Icc a b)) :
+    let Φ : ℝ → ℂ := fun t ↦ (t ^ (-σ) : ℝ) * e (φ t) / (2 * π * I * (deriv φ t))
+    ∫ t in Set.Icc a b, (t ^ (-σ) : ℝ) * e (φ t) = Φ b - Φ a +
+      (σ * ∫ t in Set.Icc a b, (t ^ (-σ - 1) : ℝ) / (2 * π * I * (deriv φ t)) * e (φ t)) +
+      ∫ t in Set.Icc a b, (t ^ (-σ) : ℝ) * (deriv (deriv φ) t) /
+        (2 * π * I * (deriv φ t) ^ 2) * e (φ t) := by
+  admit
+
+theorem cpow_split_re_im (t : ℝ) (s : ℂ) (ht : 0 < t) :
+    (t : ℂ) ^ s = (t : ℂ) ^ (s.re : ℂ) * cexp ((s.im * I) * Real.log t) := by
+  admit
+
+private lemma phase_rewrite (t : ℝ) (s : ℂ) (ν : ℝ) (ht : 0 < t) :
+    (t : ℂ) ^ (-s) * e (ν * t) =
+      ((t ^ (-s.re) : ℝ) : ℂ) * e (ν * t - (s.im / (2 * π)) * Real.log t) := by
+  admit
+
+private lemma deriv_linear_sub_log (ν c : ℝ) (t : ℝ) (ht : t ≠ 0) :
+    deriv (fun t ↦ ν * t - c * Real.log t) t = ν - c * t⁻¹ := by
+  admit
+
+private lemma phi_deriv_ne_zero (s : ℂ) (ν a t : ℝ)
+    (ha : a > |s.im| / (2 * π * |ν|)) (ha_pos : 0 < a) (hν : ν ≠ 0)
+    (ht : a ≤ t) :
+    deriv (fun t ↦ ν * t - s.im / (2 * π) * Real.log t) t ≠ 0 := by
+  admit
+
+/-!
+## The decay of a Fourier transform
+
+Our first objective will be to estimate the Fourier transform of
+$t^{-s} \mathbb{1}_{[a,b]}$. In particular, we will show that, if $a$ and $b$ are
+half-integers, the Fourier cosine transform has quadratic decay *when evaluated at
+integers*. In general, for real arguments, the Fourier transform of a discontinuous
+function such as $t^{-s} \mathbb{1}_{[a,b]}$ does not have quadratic decay.
+-/
+/-- **Fourier transform of a truncated power law**
+
+Let $s = \sigma + i \tau$, $\sigma\geq 0$, $\tau\in \mathbb{R}$.
+Let $\nu\in \mathbb{R}\setminus \{0\}$, $b>a>\frac{|\tau|}{2\pi |\nu|}$.
+Then
+$$\int_a^b t^{-s} e(\nu t) dt =
+ \left. \frac{t^{-\sigma} e(\varphi_\nu(t))}{2\pi i \varphi_\nu'(t)}\right|_a^b
+ + \sigma \int_a^b \frac{t^{-\sigma-1}}{2\pi i \varphi_\nu'(t)} e(\varphi_\nu(t)) dt
+ + \int_a^b \frac{t^{-\sigma} \varphi_\nu''(t)}{2\pi i (\varphi_\nu'(t))^2}
+ e(\varphi_\nu(t)) dt,
+$$
+where $\varphi_\nu(t) = \nu t - \frac{\tau}{2\pi} \log t$.
+
+PROVIDED SOLUTION:
+We write $t^{-s} e(\nu t) = t^{-\sigma} e(\varphi_\nu(t))$ and integrate by parts with
+$u = t^{-\sigma}/(2\pi i \varphi_\nu'(t))$, $v = e(\varphi_\nu(t))$.
+Here $\varphi_\nu'(t) = \nu - \tau/(2\pi t)\ne 0$ for $t\in [a,b]$ because
+$t\geq a > |\tau|/(2\pi |\nu|)$ implies $|\nu|>|\tau|/(2\pi t)$.
+Clearly
+$$u dv = \frac{ t^{-\sigma}}{2\pi i \varphi_\nu'(t)} \cdot 2\pi i \varphi_\nu'(t)
+  e(\varphi_\nu(t)) dt = t^{-\sigma} e(\varphi_\nu(t)) dt,$$
+while
+$$du = \left(\frac{-\sigma t^{-\sigma-1}}{2\pi i \varphi_\nu'(t)}
+  - \frac{t^{-\sigma} \varphi_\nu''(t)}{2\pi i (\varphi_\nu'(t))^2}\right) dt.$$
+-/
+theorem lemma_aachIBP (s : ℂ) (ν : ℝ) (hν : ν ≠ 0) (a b : ℝ)
+    (ha : a > |s.im| / (2 * π * |ν|)) (hb : b > a) :
+    let φ : ℝ → ℝ := fun t ↦ ν * t - (s.im / (2 * π)) * Real.log t
+    let Φ : ℝ → ℂ := fun t ↦
+      (t ^ (-s.re) : ℝ) * e (φ t) / (2 * π * I * (deriv φ t))
+    ∫ t in Set.Icc a b, t ^ (-s) * e (ν * t) = Φ b - Φ a +
+      (s.re * ∫ t in Set.Icc a b,
+        (t ^ (-s.re - 1) : ℝ) / (2 * π * I * (deriv φ t)) * e (φ t)) +
+      ∫ t in Set.Icc a b, (t ^ (-s.re) : ℝ) * (deriv (deriv φ) t) /
+        (2 * π * I * (deriv φ t) ^ 2) * e (φ t) := by
+  admit
+
+/-- **Total variation of a function with monotone absolute value**
+
+Let $g:[a,b]\to \mathbb{R}$ be continuous, with $|g(t)|$ non-increasing. Then
+$g$ is monotone, and $\|g\|_{\mathrm{TV}} = |g(a)|-|g(b)|$.
+
+PROVIDED SOLUTION:
+Suppose $g$ changed sign: $g(a')>0>g(b')$ or $g(a') <0 < g(b')$ for some
+$a\leq a'< b'\leq b$. By IVT, there would be an $r\in [a',b']$ such that $g(r)=0$.
+Since $|g|$ is non-increasing, $g(b')=0$; contradiction. So, $g$ does not change sign:
+either $g\leq 0$ or $g\geq 0$.
+
+Thus, there is an $\varepsilon\in \{-1,1\}$ such that $g(t) = \varepsilon |g(t)|$ for all
+$t\in [a,b]$. Hence, $g$ is monotone. Then $\|g\|_{\mathrm{TV}} = |g(a)-g(b)|$.
+Since $|g(a)|\geq |g(b)|$ and $g(a)$, $g(b)$ are either both non-positive or non-negative,
+$|g(a)-g(b)| = |g(a)|-|g(b)|$.
+-/
+theorem lemma_aachra {a b : ℝ} (ha : a < b) (g : ℝ → ℝ)
+    (hg_cont : ContinuousOn g (Set.Icc a b))
+    (hg_mon : AntitoneOn (fun t ↦ |g t|) (Set.Icc a b)) :
+    BoundedVariationOn g (Set.Icc a b) ∧
+    (eVariationOn g (Set.Icc a b)).toReal = |g a| - |g b| := by
+  admit
+
+/-- For C¹ functions `g` and `F`, the error in integration by parts is bounded by
+`sup ‖F‖ · ∫ |g'|`. -/
+theorem lemma_IBP_bound_C1 {a b : ℝ} (hab : a < b) (g : ℝ → ℝ) (F : ℝ → ℂ)
+    (hg : ContDiffOn ℝ 1 g (Icc a b)) (hF : ContDiffOn ℝ 1 F (Icc a b)) :
+    ‖(∫ t in Icc a b, (g t : ℂ) * deriv F t) - (g b * F b - g a * F a)‖ ≤
+        (⨆ t ∈ Icc a b, ‖F t‖) * ∫ t in Icc a b, |deriv g t| := by
+  admit
+
+/-- Integration by parts bound for `C¹` monotone functions.
+For `C¹` monotone `g` and `C¹` `F`, `‖∫ g F' - [gF]‖ ≤ sup ‖F‖ · (g(b) - g(a))`. -/
+theorem lemma_IBP_bound_C1_monotone {a b : ℝ} (hab : a < b) (g : ℝ → ℝ) (F : ℝ → ℂ)
+    (hg : ContDiffOn ℝ 1 g (Icc a b)) (hg_mono : MonotoneOn g (Icc a b))
+    (hF : ContDiffOn ℝ 1 F (Icc a b)) :
+    ‖(∫ t in Icc a b, (g t : ℂ) * deriv F t) - (g b * F b - g a * F a)‖ ≤
+    (⨆ t ∈ Icc a b, ‖F t‖) * (g b - g a) := by
+  admit
+
+open scoped unitInterval in
+/-- The Bernstein approximation of a monotone function is monotone. -/
+theorem bernsteinApproximation_monotone (n : ℕ) (f : C(I, ℝ)) (hf : Monotone f) :
+    Monotone (bernsteinApproximation n f) := by
+  admit
+
+open scoped unitInterval in
+/-- Continuous monotone functions on `[0,1]` can be uniformly approximated by smooth monotone
+functions (polynomials). -/
+theorem lemma_approx_monotone_C1_I (f : C(I, ℝ)) (hf_mono : Monotone f) :
+    ∀ ε > 0, ∃ P : ℝ → ℝ, ContDiffOn ℝ 1 P I ∧ MonotoneOn P I ∧ ∀ x : I, |f x - P x| < ε := by
+  admit
+
+/-- Continuous monotone functions on a compact interval can be uniformly approximated by `C¹`
+monotone functions. -/
+theorem lemma_approx_monotone_C1 {a b : ℝ} (hab : a < b) (g : ℝ → ℝ)
+    (hg_cont : ContinuousOn g (Set.Icc a b)) (hg_mono : MonotoneOn g (Set.Icc a b)) :
+    ∀ ε > 0, ∃ g' : ℝ → ℝ, ContDiffOn ℝ 1 g' (Set.Icc a b) ∧ MonotoneOn g' (Set.Icc a b) ∧
+      ∀ x ∈ Set.Icc a b, |g x - g' x| < ε := by
+  admit
+
+/-- Integration by parts bound for continuous monotone functions.
+For continuous monotone `g` and `C¹` `F`, `‖∫ g F' - [gF]‖ ≤ sup ‖F‖ · (g(b) - g(a))`. -/
+theorem lemma_IBP_bound_monotone {a b : ℝ} (hab : a < b) (g : ℝ → ℝ) (F : ℝ → ℂ)
+    (hg_cont : ContinuousOn g (Icc a b))
+    (hg_mono : MonotoneOn g (Icc a b))
+    (hF_C1 : ContDiffOn ℝ 1 F (Icc a b)) :
+    ‖(∫ t in Icc a b, (g t : ℂ) * deriv F t) - (g b * F b - g a * F a)‖ ≤
+    (⨆ t ∈ Icc a b, ‖F t‖) * (g b - g a) := by
+  admit
+
+/-- Integration by parts bound for continuous functions with antitone absolute value.
+If `|g|` is antitone, `‖∫ g F'‖ ≤ sup ‖F‖ · 2 |g(a)|`. -/
+theorem lemma_IBP_bound_abs_antitone {a b : ℝ} (hab : a < b) (g : ℝ → ℝ) (F : ℝ → ℂ)
+    (hgcont : ContinuousOn g (Icc a b)) (hganti : AntitoneOn (|g ·|) (Icc a b))
+    (hF : ContDiffOn ℝ 1 F (Icc a b)) :
+    ‖∫ t in Icc a b, (g t : ℂ) * deriv F t‖ ≤ (⨆ t ∈ Icc a b, ‖F t‖) * (2 * |g a|) := by
+  admit
+
+/-- **Non-stationary phase estimate**
+
+Let $\varphi:[a,b]\to \mathbb{R}$ be $C^1$ with $\varphi'(t)\ne 0$ for all $t\in [a,b]$.
+Let $h:[a,b]\to \mathbb{R}$ be such that $g(t) = h(t)/\varphi'(t)$ is continuous and
+$|g(t)|$ is non-increasing. Then
+$$\left|\int_a^b h(t) e(\varphi(t)) dt\right|\leq \frac{|g(a)|}{\pi}.$$
+
+PROVIDED SOLUTION:
+Since $\varphi$ is $C^1$, $e(\varphi(t))$ is $C^1$, and
+$h(t) e(\varphi(t)) = \frac{h(t)}{2\pi i \varphi'(t)} \frac{d}{dt} e(\varphi(t))$ everywhere.
+By Lemma `lemma_aachra`, $g$ is of bounded variation. Hence, we can integrate by parts:
+$$\int_a^b h(t) e(\varphi(t)) dt =
+  \left. \frac{h(t) e(\varphi(t))}{2\pi i \varphi'(t)}\right|_a^b -
+  \int_a^b e(\varphi(t))\, d\left(\frac{h(t)}{2\pi i \varphi'(t)}\right).
+$$
+The first term on the right has absolute value $\leq \frac{|g(a)|+|g(b)|}{2\pi}$.
+Again by Lemma `lemma_aachra`,
+$$\left|
+\int_a^b e(\varphi(t))\, d\left(\frac{h(t)}{2\pi i \varphi'(t)}\right)
+\right|\leq \frac{1}{2\pi} \|g\|_{\mathrm{TV}} = \frac{|g(a)|-|g(b)|}{2\pi}.
+$$
+We are done by
+$\frac{|g(a)|+|g(b)|}{2\pi} + \frac{|g(a)|-|g(b)|}{2\pi} = \frac{|g(a)|}{\pi}$.
+-/
+theorem lemma_aachmonophase {a b : ℝ} (ha : a < b) (φ : ℝ → ℝ) (hφ_C1 : ContDiffOn ℝ 1 φ (Set.Icc a b))
+    (hφ'_ne0 : ∀ t ∈ Set.Icc a b, deriv φ t ≠ 0) (h g : ℝ → ℝ) (hg : ∀ t, g t = h t / deriv φ t)
+    (hg_cont : ContinuousOn g (Set.Icc a b)) (hg_mon : AntitoneOn (fun t ↦ |g t|) (Set.Icc a b)) :
+    ‖∫ t in Set.Icc a b, h t * e (φ t)‖ ≤ |g a| / π := by
+  admit
+
+/-- **A decreasing function**
+
+Let $\sigma\geq 0$, $\tau\in \mathbb{R}$, $\nu \in \mathbb{R}\setminus \{0\}$.
+Let $b>a>\frac{|\tau|}{2\pi |\nu|}$. Then, for any $k\geq 1$,
+$f(t) = t^{-\sigma-k} |2\pi \nu-\tau/t|^{-k-1}$ is decreasing on $[a,b]$.
+
+PROVIDED SOLUTION:
+Let $a\leq t\leq b$. Since $\left|\frac{\tau}{t \nu}\right| < 2\pi$, we see that
+$2\pi-\frac{\tau}{\nu t} >0$, and so
+$|2\pi \nu-\tau/t|^{-k-1} = |\nu|^{-k-1} \left(2\pi - \frac{\tau}{t \nu}\right)^{-k-1}$.
+Now we take logarithmic derivatives:
+$$t (\log f(t))' = - (\sigma+k) - (k+1) \frac{\tau/t}{2\pi \nu - \tau/t}
+= -\sigma - \frac{2\pi k + \frac{\tau}{t \nu}}{2\pi - \frac{\tau}{t \nu}} < -\sigma \leq 0,$$
+since, again by $\frac{|\tau|}{t |\nu|} < 2\pi$ and $k\geq 1$, we have
+$2\pi k + \frac{\tau}{t \nu}>0$, and, as we said, $2\pi - \frac{\tau}{t \nu}>0$.
+-/
+theorem lemma_aachdecre (σ : ℝ) (hσ : 0 ≤ σ) (τ : ℝ) (ν : ℝ) (hν : ν ≠ 0) (a b : ℝ)
+    (ha : a > |τ| / (2 * π * |ν|)) (k : ℕ) (hk : 1 ≤ k) :
+    let f : ℝ → ℝ := fun t ↦ t ^ (-σ - k) * |2 * π * ν - τ / t| ^ (-(k : ℝ) - 1)
+    AntitoneOn f (Set.Icc a b) := by
+  admit
+
+/-- **Estimating an integral**
+
+Let $s = \sigma + i \tau$, $\sigma\geq 0$, $\tau\in \mathbb{R}$.
+Let $\nu \in \mathbb{R}\setminus \{0\}$, $b>a>\frac{|\tau|}{2\pi |\nu|}$.
+Then
+$$\int_a^b t^{-s} e(\nu t) dt =
+ \left. \frac{t^{-\sigma} e(\varphi_\nu(t))}{2\pi i \varphi_\nu'(t)}\right|_a^b +
+\frac{a^{-\sigma-1}}{2\pi^2} O^*\left(\frac{\sigma}{(\nu-\vartheta)^2} +
+\frac{|\vartheta|}{|\nu-\vartheta|^3}\right),
+$$
+where $\varphi_\nu(t) = \nu t - \frac{\tau}{2\pi} \log t$ and
+$\vartheta = \frac{\tau}{2\pi a}$.
+
+PROVIDED SOLUTION:
+Apply Lemma~`lemma_aachIBP`. Since $\varphi_\nu'(t) = \nu - \tau/(2\pi t)$, we know by
+Lemma `lemma_aachdecre` (with $k=1$) that
+$g_1(t) = \frac{t^{-\sigma-1}}{(\varphi_\nu'(t))^2}$ is decreasing on $[a,b]$.
+We know that $\varphi_\nu'(t)\ne 0$ for $t\geq a$ by $a>\frac{|\tau|}{2\pi |\nu|}$, and so
+we also know that $g_1(t)$ is continuous for $t\geq a$.
+Hence, by Lemma `lemma_aachmonophase`,
+$$\left|\int_a^b \frac{t^{-\sigma-1}}{2\pi i \varphi_\nu'(t)} e(\varphi_\nu(t)) dt \right|
+  \leq \frac{1}{2\pi} \cdot \frac{|g_1(a)|}{\pi}
+  = \frac{1}{2\pi^2} \frac{a^{-\sigma-1}}{\left|\nu - \vartheta\right|^2},$$
+since $\varphi_\nu'(a) = \nu - \vartheta$. We remember to include the factor of $\sigma$
+in front of an integral in (equation eq:aachquno).
+
+Since $\varphi_\nu'(t)$ is as above and $\varphi_\nu''(t) = \tau/(2\pi t^2)$, we know
+by Lemma `lemma_aachdecre` (with $k=2$) that
+$g_2(t) = \frac{t^{-\sigma} |\varphi_\nu''(t)|}{|\varphi_\nu'(t)|^3} =
+\frac{|\tau|}{2\pi} \frac{t^{-\sigma-2}}{|\varphi_\nu'(t)|^3}$ is decreasing on $[a,b]$
+we also know, as before, that $g_2(t)$ is continuous.
+Hence, again by Lemma `lemma_aachmonophase`,
+$$\left|\int_a^b \frac{t^{-\sigma} \varphi_\nu''(t)}{2\pi i (\varphi_\nu'(t))^2}
+ e(\varphi_\nu(t)) dt\right|\leq \frac{1}{2\pi} \frac{|g_2(a)|}{\pi} = \frac{1}{2\pi^2}
+ \frac{a^{-\sigma-1} |\vartheta|}{\left|\nu - \vartheta\right|^3}.
+$$
+-/
+theorem lemma_aachfour (s : ℂ) (hsigma : 0 ≤ s.re) (ν : ℝ) (hν : ν ≠ 0) (a b : ℝ)
+    (ha : a > |s.im| / (2 * π * |ν|)) (hb : b > a) :
+    let φ : ℝ → ℝ := fun t ↦ ν * t - (s.im / (2 * π)) * Real.log t
+    let Φ : ℝ → ℂ := fun t ↦ (t ^ (-s.re) : ℝ) * e (φ t) / (2 * π * I * (deriv φ t))
+    let ϑ : ℝ := s.im / (2 * π * a)
+    ∃ E, ∫ t in Set.Icc a b, t ^ (-s) * e (ν * t) = Φ b - Φ a +
+      ((a ^ (-s.re - 1) : ℝ) / (2 * π ^ 2)) * E ∧
+      ‖E‖ ≤ s.re / (|ν - ϑ| ^ 2) + |ϑ| / (|ν - ϑ| ^ 3) := by
+  admit
+
+def _root_.Real.IsHalfInteger (x : ℝ) : Prop := ∃ k : ℤ, x = k + 1 / 2
+
+/-- At half-integers, `(Φ n t + Φ (-n) t) / 2 = Ψ t` where `Φ` and `Ψ` are as in `lemma_aachcanc`. -/
+lemma lemma_aachcanc_pointwise (s : ℂ) {n : ℤ} (hn : n ≠ 0)
+    (t : ℝ) (ht : t.IsHalfInteger) (ht_pos : t > 0)
+    (h_deriv_n : deriv (fun x ↦ (n : ℝ) * x - (s.im / (2 * π)) * Real.log x) t ≠ 0)
+    (h_deriv_neg_n : deriv (fun x ↦ -(n : ℝ) * x - (s.im / (2 * π)) * Real.log x) t ≠ 0)
+    (h_denom : (n : ℂ) ^ 2 - (s.im / (2 * π * t)) ^ 2 ≠ 0) :
+    let ϕ : ℝ → ℝ → ℝ := fun ν t ↦ ν * t - (s.im / (2 * π)) * Real.log t
+    let Φ : ℝ → ℝ → ℂ := fun ν t ↦ (t ^ (-s.re) : ℝ) * e (ϕ ν t) / (2 * π * I * (deriv (ϕ ν) t))
+    let Ψ : ℝ → ℂ := fun t ↦ (-1) ^ n * (t ^ (-s) : ℂ) * (s.im / (2 * π * t)) /
+      (2 * π * I * (n ^ 2 - (s.im / (2 * π * t)) ^ 2))
+    (1 / 2) * (Φ n t + Φ (-n) t) = Ψ t := by
+  admit
+
+/-- **Estimating an sum**
+
+Let $s = \sigma + i \tau$, $\sigma,\tau \in \mathbb{R}$.
+Let $n\in \mathbb{Z}_{>0}$. Let $a,b\in \mathbb{Z} + \frac{1}{2}$,
+$b>a>\frac{|\tau|}{2\pi n}$.
+Write $\varphi_\nu(t) = \nu t - \frac{\tau}{2\pi} \log t$.
+Then
+$$\frac{1}{2} \sum_{\nu = \pm n}
+  \left. \frac{t^{-\sigma} e(\varphi_\nu(t))}{2\pi i \varphi_\nu'(t)}\right|_a^b =
+  \left. \frac{(-1)^n t^{-s} \cdot \frac{\tau}{2\pi t}}
+  {2\pi i \left(n^2 - \left(\frac{\tau}{2\pi t}\right)^2\right)}\right|_a^b.
+$$
+
+PROVIDED SOLUTION:
+Since $e(\varphi_\nu(t)) = e(\nu t) t^{-i \tau} = (-1)^{\nu} t^{-i \tau}$ for any
+half-integer $t$ and any integer $\nu$,
+$$\left. \frac{t^{-\sigma} e(\varphi_\nu(t))}{2\pi i \varphi_\nu'(t)}\right|_a^b =
+\left. \frac{(-1)^{\nu} t^{-s}}{2\pi i \varphi_\nu'(t)}\right|_a^b
+$$
+for $\nu = \pm n$. Clearly $(-1)^{\nu} = (-1)^n$.
+Since $\varphi_\nu'(t) = \nu - \alpha$ for $\alpha = \frac{\tau}{2\pi t}$,
+$$\frac{1}{2} \sum_{\nu = \pm n} \frac{1}{\varphi_\nu'(t)} = \frac{1/2}{n - \alpha} +
+\frac{1/2}{- n - \alpha} = \frac{-\alpha}{\alpha^2-n^2} = \frac{\alpha}{n^2-\alpha^2}.
+$$
+-/
+theorem lemma_aachcanc (s : ℂ) {n : ℤ} (hn : 0 < n) {a b : ℝ}
+    (ha : a > |s.im| / (2 * π * n)) (hb : b > a)
+    (ha' : a.IsHalfInteger) (hb' : b.IsHalfInteger) :
+    let ϕ : ℝ → ℝ → ℝ := fun ν t ↦ ν * t - (s.im / (2 * π)) * Real.log t
+    let Φ : ℝ → ℝ → ℂ := fun ν t ↦
+      (t ^ (-s.re) : ℝ) * e (ϕ ν t) / (2 * π * I * (deriv (ϕ ν) t))
+    let Ψ : ℝ → ℂ := fun t ↦ (-1) ^ n * (t ^ (-s) : ℂ) * (s.im / (2 * π * t)) /
+      (2 * π * I * (n ^ 2 - (s.im / (2 * π * t)) ^ 2))
+    (1 / 2) * (Φ n b - Φ n a + Φ (-n) b - Φ (-n) a) = Ψ b - Ψ a := by
+  admit
+
+/-!
+It is this easy step that gives us quadratic decay on $n$. It is just as
+in the proof of van der Corput's Process B in, say, [reference].
+-/
+/-- **Estimating a Fourier cosine integral**
+
+Let $s = \sigma + i \tau$, $\sigma\geq 0$, $\tau\in \mathbb{R}$.
+Let $a,b\in \mathbb{Z} + \frac{1}{2}$, $b>a>\frac{|\tau|}{2\pi}$.
+Write $\vartheta = \frac{\tau}{2\pi a}$. Then, for any integer $n\geq 1$,
+$$\begin{aligned}\int_a^b t^{-s} \cos 2\pi n t\, dt &=
+\left. \left(\frac{(-1)^n t^{-s}}{2\pi i} \cdot
+  \frac{\frac{\tau}{2\pi t}}{n^2 - \left(\frac{\tau}{2\pi t}\right)^2}\right)\right|_a^b \\
+&\quad+ \frac{a^{-\sigma-1}}{4\pi^2}\, O^*\left(\frac{\sigma}{(n-\vartheta)^2}
+  + \frac{\sigma}{(n+\vartheta)^2}
+  + \frac{|\vartheta|}{|n-\vartheta|^3}
+  + \frac{|\vartheta|}{|n+\vartheta|^3}\right).\end{aligned}$$
+
+PROVIDED SOLUTION:
+Write $\cos 2\pi n t = \frac{1}{2} (e(n t) + e(-n t))$. Since $n\geq 1$ and
+$a>\frac{|\tau|}{2\pi}$, we know that $a>\frac{|\tau|}{2 \pi n}$, and so we can apply
+Lemma `lemma_aachfour` with $\nu = \pm n$.
+We then apply Lemma~`lemma_aachcanc` to combine the boundary contributions
+$\left. \right|_a^b$ for $\nu=\pm n$.
+-/
+theorem proposition_applem (s : ℂ) (hsigma : 0 ≤ s.re) {a b : ℝ} (ha : a > |s.im| / (2 * π))
+    (hb : b > a) (ha' : a.IsHalfInteger) (hb' : b.IsHalfInteger) {n : ℕ} (hn : 1 ≤ n) :
+    let ϑ : ℝ := s.im / (2 * π * a)
+    ∃ E, ∫ t in Set.Icc a b, (t : ℂ) ^ (-s) * Real.cos (2 * π * (n : ℝ) * t) =
+      ((-1) ^ n * (b ^ (-s) : ℂ) * (s.im / (2 * π * b)) /
+        (2 * π * I * ((n : ℝ) ^ 2 - (s.im / (2 * π * b)) ^ 2)) -
+       (-1) ^ n * (a ^ (-s) : ℂ) * (s.im / (2 * π * a)) /
+        (2 * π * I * ((n : ℝ) ^ 2 - (s.im / (2 * π * a)) ^ 2))) +
+      ((a ^ (-s.re - 1) : ℝ) / (4 * π ^ 2)) * E ∧
+      ‖E‖ ≤ s.re / ((n - ϑ) ^ 2) + s.re / ((n + ϑ) ^ 2) +
+        |ϑ| / (|n - ϑ| ^ 3) + |ϑ| / (|n + ϑ| ^ 3) := by
+  admit
+
+/-!
+## Approximating zeta(s)
+
+We start with an application of Euler-Maclaurin.
+-/
+/-- **Identity for a partial sum of zeta(s) for integer b**
+
+Let $b>0$, $b\in \mathbb{Z}$.
+Then, for all $s\in \mathbb{C}\setminus \{1\}$ with $\Re s > 0$,
+$$
+  \sum_{n \leq b} \frac{1}{n^s} = \zeta(s) + \frac{b^{1-s}}{1-s} + \frac{b^{-s}}{2}
+  + s \int_b^\infty \left(\{y\}-\frac{1}{2}\right) \frac{dy}{y^{s+1}}.
+$$
+
+PROVIDED SOLUTION:
+Assume first that $\Re s > 1$. By first-order Euler-Maclaurin,
+$$\sum_{n > b}\frac{1}{n^s} = \int_b^\infty \frac{dy}{y^s} + \int_b^\infty
+ \left(\{y\}-\frac{1}{2}\right) d\left(\frac{1}{y^s}\right).
+$$
+Here $\int_b^\infty \frac{dy}{y^s} = -\frac{b^{1-s}}{1-s}$ and
+$d\left(\frac{1}{y^s}\right) = - \frac{s}{y^{s+1}} dy$.
+Hence, by $\sum_{n\leq b} \frac{1}{n^s} = \zeta(s) - \sum_{n>b} \frac{1}{n^s}$
+for $\Re s > 1$,
+$$\sum_{n\leq b} \frac{1}{n^s} = \zeta(s) + \frac{b^{1-s}}{1-s} +
+\int_b^\infty \left(\{y\}-\frac{1}{2}\right) \frac{s}{y^{s+1}} dy.$$
+Since the integral converges absolutely for $\Re s > 0$, both sides extend holomorphically
+to $\{s\in \mathbb{C}: \Re s>0, s\ne 1\}$; thus, the equation holds throughout that region.
+-/
+theorem lemma_abadeulmac' {b : ℕ} (hb : 0 < b) {s : ℂ}
+    (hs1 : s ≠ 1) (hsigma : 0 < s.re) :
+    ∑ n ∈ Icc 1 b, (n : ℂ) ^ (-s) =
+      riemannZeta s + (b ^ (1 - s) : ℂ) / (1 - s) + (b ^ (-s) : ℂ) / (2) +
+      s * ∫ y in Set.Ioi (b : ℝ), (Int.fract y - 1 / 2) * ((y : ℂ) ^ (-(s + 1))) := by
+  admit
+
+/-- **Identity for a partial sum of zeta(s)**
+
+Let $b>0$, $b\in \mathbb{Z} + \frac{1}{2}$.
+Then, for all $s\in \mathbb{C}\setminus \{1\}$ with $\Re s > 0$,
+$$
+  \sum_{n\leq b} \frac{1}{n^s} = \zeta(s) + \frac{b^{1-s}}{1-s}
+  + s \int_b^\infty \left(\{y\}-\frac{1}{2}\right) \frac{dy}{y^{s+1}}.
+$$
+
+PROVIDED SOLUTION:
+Assume first that $\Re s > 1$. By first-order Euler-Maclaurin and
+$b\in \mathbb{Z}+\frac{1}{2}$,
+$$\sum_{n>b}\frac{1}{n^s} = \int_b^\infty \frac{dy}{y^s} + \int_b^\infty
+ \left(\{y\}-\frac{1}{2}\right) d\left(\frac{1}{y^s}\right).
+$$
+Here $\int_b^\infty \frac{dy}{y^s} = -\frac{b^{1-s}}{1-s}$ and
+$d\left(\frac{1}{y^s}\right) = - \frac{s}{y^{s+1}} dy$.
+Hence, by $\sum_{n\leq b} \frac{1}{n^s} = \zeta(s) - \sum_{n>b} \frac{1}{n^s}$
+for $\Re s > 1$,
+$$\sum_{n\leq b} \frac{1}{n^s} = \zeta(s) + \frac{b^{1-s}}{1-s} +
+\int_b^\infty \left(\{y\}-\frac{1}{2}\right) \frac{s}{y^{s+1}} dy.$$
+Since the integral converges absolutely for $\Re s > 0$, both sides extend holomorphically
+to $\{s\in \mathbb{C}: \Re s>0, s\ne 1\}$; thus, the equation holds throughout that region.
+-/
+theorem lemma_abadeulmac {b : ℝ} (hb : 0 < b) (hb' : b.IsHalfInteger) {s : ℂ}
+    (hs1 : s ≠ 1) (hsigma : 0 < s.re) :
+    ∑ n ∈ Icc 1 ⌊b⌋₊, (n : ℂ) ^ (-s) =
+      riemannZeta s + (b ^ (1 - s) : ℂ) / (1 - s) +
+      s * ∫ y in Set.Ioi b, (Int.fract y - 1 / 2 : ℂ) * ((y : ℂ) ^ (-(s + 1))) := by
+  admit
+
+/-- **Estimate for a partial sum of $\\zeta(s)$**
+
+Let $b>a>0$, $b\in \mathbb{Z} + \frac{1}{2}$.
+Then, for all $s\in \mathbb{C}\setminus \{1\}$ with $\sigma = \Re s > 0$,
+$$\sum_{n\leq a} \frac{1}{n^s} = -\sum_{a < n\leq b} \frac{1}{n^s} + \zeta(s)
+  + \frac{b^{1-s}}{1-s} + O^*\left(\frac{|s|}{2 \sigma b^\sigma}\right).$$
+
+PROVIDED SOLUTION:
+By Lemma `lemma_abadeulmac`, $\sum_{n\leq a} = \sum_{n\leq b} - \sum_{a < n\leq b}$,
+$\left|\{y\}-\frac{1}{2}\right| \leq \frac{1}{2}$ and
+$\int_b^\infty \frac{dy}{|y^{s+1}|} = \frac{1}{\sigma b^\sigma}$.
+-/
+theorem lemma_abadtoabsum {a b : ℝ} (ha : 0 < a) (hb' : b.IsHalfInteger) (hab : b > a) {s : ℂ}
+    (hs1 : s ≠ 1) (hsigma : 0 < s.re) :
+    ∃ E, ∑ n ∈ Icc 1 ⌊a⌋₊, (n : ℂ) ^ (-s) = -∑ n ∈ Ioc ⌊a⌋₊ ⌊b⌋₊,
+      (n : ℂ) ^ (-s) + riemannZeta s + (b ^ (1 - s) : ℂ) / (1 - s) + E ∧
+      ‖E‖ ≤ ‖s‖ / (2 * s.re * (b ^ s.re : ℝ)) := by
+  admit
+
+/-- **Poisson summation for a partial sum of $\\zeta(s)$**
+
+Let $a,b\in \mathbb{R}\setminus \mathbb{Z}$, $b>a>0$. Let $s\in \mathbb{C}\setminus \{1\}$.
+Define $f:\mathbb{R}\to\mathbb{C}$ by $f(y) = 1_{[a,b]}(y)/y^s$. Then
+$$\sum_{a < n\leq b} \frac{1}{n^s} = \frac{b^{1-s} - a^{1-s}}{1-s}
+  + \lim_{N\to \infty} \sum_{n=1}^N (\widehat{f}(n) + \widehat{f}(-n)).$$
+
+PROVIDED SOLUTION:
+Since $a\notin \mathbb{Z}$, $\sum_{a < n\leq b} \frac{1}{n^s} = \sum_{n\in \mathbb{Z}} f(n)$.
+By Poisson summation (as in [reference])
+$$\sum_{n\in \mathbb{Z}} f(n) = \lim_{N\to \infty} \sum_{n=-N}^N \widehat{f}(n) =
+\widehat{f}(0) + \lim_{N\to \infty} \sum_{n=1}^N (\widehat{f}(n) + \widehat{f}(-n)),$$
+where we use the facts that $f$ is in $L^1$, of bounded variation, and
+(by $a,b\not\in \mathbb{Z}$) continuous at every integer. Now
+$$\widehat{f}(0) = \int_{\mathbb{R}} f(y) dy
+  = \int_a^b \frac{dy}{y^s} = \frac{b^{1-s}-a^{1-s}}{1-s}.$$
+-/
+theorem lemma_abadusepoisson {a b : ℝ} (ha : ¬∃ n : ℤ, a = n) (hb : ¬∃ n : ℤ, b = n)
+    (hab : b > a) (ha' : 0 < a) {s : ℂ} (hs1 : s ≠ 1) :
+    let f : ℝ → ℂ := fun y ↦
+      if a ≤ y ∧ y ≤ b then (y ^ (-s.re) : ℝ) * e (-(s.im / (2 * π)) * Real.log y) else 0
+    ∃ L : ℂ, Filter.atTop.Tendsto
+      (fun (N : ℕ) ↦ ∑ n ∈ Ioc 1 N,
+        (Real.fourierIntegral f (n : ℝ) + Real.fourierIntegral f (-(n : ℝ)))) (nhds L) ∧
+      ∑ n ∈ Ioc ⌊a⌋₊ ⌊b⌋₊, (n : ℂ) ^ (-s) =
+        ((b ^ (1 - s) : ℂ) - (a ^ (1 - s) : ℂ)) / (1 - s) + L := by
+  sorry
+
+
+lemma trig (z : ℂ) : tan z = - cot (z + π / 2) := by
+  admit
+
+lemma sin_ne_zero {z : ℂ} (hz : ¬∃ (n : ℤ), n * π / 2 = z) : sin z ≠ 0 := by
+  admit
+
+lemma cos_ne_zero {z : ℂ} (hz : ¬∃ (n : ℤ), n * π / 2 = z) : cos z ≠ 0 := by
+  admit
+
+lemma trig' {z : ℂ} (hz : ¬∃ (n : ℤ), n * π / 2 = z) : cot z + tan z = 2 / sin (2 * z) := by
+  admit
+
+lemma trig'' {z : ℂ} (hz : ¬∃ (n : ℤ), n * π / 2 = z) :
+    cot z - cot (z + π / 2) = 2 / sin (2 * z) := by
+  admit
+
+lemma hsummable {z : ℂ} (hz : z ∈ integerComplement) :
+    Summable fun n : ℕ+ ↦ 1 / (z - 2 * n) + 1 / (z + 2 * n) := by
+  admit
+
+lemma asummable {z : ℂ} (hz : z ∈ integerComplement) :
+    Summable fun n : ℕ+ ↦ (-1) ^ (2 * n : ℕ) * (1 / (z - 2 * n) + 1 / (z + 2 * n)) := by
+  admit
+
+lemma hsummable' {z : ℂ} (hz : z ∈ integerComplement) :
+    Summable fun n : ℕ+ ↦ 1 / (z + 1 - 2 * n) + 1 / (z + 1 + 2 * n) := by
+  admit
+
+lemma hsummable'' {z : ℂ} (hz : z ∈ integerComplement) :
+    Summable fun n : ℕ+ ↦ 1 / (z - (2 * n - 1)) + 1 / (z + (2 * n - 1)) := by
+  admit
+
+lemma neg_one_pow (n : ℕ+) : (-1 : ℂ) ^ (2 * n - 1 : ℕ) = -1 := by
+  admit
+
+lemma asummable'' {z : ℂ} (hz : z ∈ integerComplement) :
+    Summable fun n : ℕ+ ↦ (-1) ^ (2 * n - 1 : ℕ) *
+    (1 / (z - (2 * n - 1)) + 1 / (z + (2 * n - 1))) := by
+  admit
+
+lemma telescoping_sum (z : ℂ) (n : ℕ) :
+    ∑ k ∈ Finset.range n, (1 / (z + (2 * (k + 1 : ℕ) - 1)) - 1 / (z + (2 * (k + 1 : ℕ) + 1))) =
+    1 / (z + 1) - 1 / (z + (2 * n + 1)) := by
+  admit
+
+theorem tsum_even_add_odd' {M : Type*} [AddCommMonoid M] [TopologicalSpace M]
+    [T2Space M] [ContinuousAdd M] {f : ℕ+ → M}
+    (he : Summable fun (k : ℕ+) ↦ f (2 * k))
+    (ho : Summable fun (k : ℕ+) ↦ f (2 * k - 1)) :
+    ∑' (k : ℕ+), f (2 * k - 1) + ∑' (k : ℕ+), f (2 * k) = ∑' (k : ℕ+), f k := by
+  admit
+
+/-!
+We could prove these equations starting from Euler's product for $\sin \pi z$.
+-/
+/-- **Euler/Mittag-Leffler expansion for cosec**
+
+Let $z\in \mathbb{C}$, $z\notin \mathbb{Z}$. Then
+$$\frac{\pi}{\sin \pi z} = \frac{1}{z} +
+ \sum_{n > 0} (-1)^n\left(\frac{1}{z - n} + \frac{1}{z + n}\right).
+$$
+
+PROVIDED SOLUTION:
+Let us start from the Mittag-Leffler expansion
+$\pi \cot \pi s = \frac{1}{s} + \sum_n \left(\frac{1}{s-n} + \frac{1}{s+n}\right)$.
+
+Applying the trigonometric identity
+$\cot u - \cot \left(u + \frac{\pi}{2}\right) = \cot u + \tan u = \frac{2}{\sin 2 u}$
+with $u=\pi z/2$, and letting $s = z/2$, $s = (z+1)/2$, we see that
+$$\begin{aligned}\frac{\pi}{\sin \pi z}
+  &= \frac{\pi}{2} \cot \frac{\pi z}{2} - \frac{\pi}{2} \cot \frac{\pi (z+1)}{2} \\
+  &= \frac{1/2}{z/2} +
+    \sum_n \left(\frac{1/2}{\frac{z}{2} -n} + \frac{1/2}{\frac{z}{2} +n}\right)
+    -\frac{1/2}{(z+1)/2}
+    - \sum_n \left(\frac{1/2}{\frac{z+1}{2} -n} + \frac{1/2}{\frac{z+1}{2} +n}\right)\\
+  &= \frac{1}{z} + \sum_n \left(\frac{1}{z - 2 n} + \frac{1}{z + 2 n}\right) -
+    \sum_n \left(\frac{1}{z - (2 n - 1)} + \frac{1}{z + (2 n - 1)}\right)
+\end{aligned}$$
+after reindexing the second sum. Regrouping terms again, we obtain our equation.
+-/
+theorem lemma_abadeuleulmit1 {z : ℂ} (hz : z ∈ integerComplement) :
+    (π / sin (π * z)) =
+    (1 / z) + ∑' (n : ℕ+), (-1) ^ (n : ℕ) * ((1 / (z - n) : ℂ) + (1 / (z + n) : ℂ)) := by
+  admit
+
+/-- **Euler/Mittag-Leffler expansion for cosec squared**
+
+Let $z\in \mathbb{C}$, $z\notin \mathbb{Z}$. Then
+$$\frac{\pi^2}{\sin^2 \pi z} = \sum_{n=-\infty}^\infty \frac{1}{(z-n)^2}.$$
+
+PROVIDED SOLUTION:
+Differentiate the expansion of $\pi \cot \pi z$ term-by-term because it converges
+uniformly on compact subsets of $\mathbb{C}\setminus \mathbb{Z}$.
+By $\left(\pi \cot \pi z\right)' = - \frac{\pi^2}{\sin^2 \pi z}$ and
+$\left(\frac{1}{z\pm n}\right)' = -\frac{1}{(z\pm n)^2}$, we are done.
+-/
+lemma lemma_abadeulmit2_integral_tsum_inv_sub_int_sq {z w : ℂ}
+  (_hz : z ∈ integerComplement)
+  (hw : w ∈ integerComplement)
+  (h_path : ∀ t : ℝ, t ∈ Set.Icc 0 1 → w + ↑t * (z - w) ∉ range (fun n : ℤ => (n : ℂ))) :
+  (z - w) * ∫ (t : ℝ) in 0..1, ∑' (n : ℤ), 1 / (w + ↑t * (z - w) - ↑n) ^ 2 =
+  ∑' (n : ℤ), (1 / (w - ↑n) - 1 / (z - ↑n)) := by
+  admit
+
+lemma summable_inv_sub_inv_aux {z w : ℂ} (hz : z ∈ integerComplement) (hw : w ∈ integerComplement) :
+    Summable (fun n : ℤ ↦ 1 / (w - n) - 1 / (z - n)) := by
+  admit
+
+lemma lemma_abadeulmit2_integral_eq_cot_diff {z w : ℂ}
+  (hz : z ∈ integerComplement)
+  (hw : w ∈ integerComplement)
+  (h_path : ∀ t : ℝ, t ∈ Set.Icc 0 1 → w + ↑t * (z - w) ∉ range (fun n : ℤ => (n : ℂ))) :
+  (z - w) * ∫ (t : ℝ) in 0..1, ∑' (n : ℤ), 1 / (w + ↑t * (z - w) - ↑n) ^ 2 =
+  -π * Complex.cot (π * z) - (-π * Complex.cot (π * w)) := by
+  admit
+
+lemma lemma_abadeulmit2_continuousAt_integral_tsum_one_div_sub_int_sq {z : ℂ}
+  (hz : z ∈ integerComplement) :
+  ContinuousAt (fun x' ↦ ∫ (t : ℝ) in 0..1, (fun w : ℂ ↦ ∑' (n : ℤ), 1 / (w - n) ^ 2) (z + ↑t * (x' - z))) z  := by
+  admit
+
+lemma lemma_abadeulmit2_tsum_one_div_sub_int_sq {z : ℂ} (hz : z ∈ integerComplement) :
+  ∑' (n : ℤ), 1 / (z - n) ^ 2 =
+  deriv (fun w ↦ -π * Complex.cot (π * w)) z := by
+  admit
+
+lemma lemma_abadeulmit2_deriv_neg_pi_mul_cot_pi_mul {z : ℂ} (hz : z ∈ integerComplement) :
+  deriv (fun w ↦ -π * Complex.cot (π * w)) z =
+  π ^ 2 / (Complex.sin (π * z)) ^ 2 := by
+  admit
+
+theorem lemma_abadeulmit2 {z : ℂ} (hz : z ∈ integerComplement) :
+    (π ^ 2 / (sin (π * z) ^ 2)) = ∑' (n : ℤ), (1 / ((z - n) ^ 2)) := by
+  admit
+
+/-- **Estimate for an inverse cubic series**
+
+For $\vartheta\in \mathbb{R}$ with $0\leq |\vartheta|< 1$,
+$$\sum_n\left(\frac{1}{(n-\vartheta)^3} + \frac{1}{(n+\vartheta)^3}\right)
+\leq \frac{1}{(1-|\vartheta|)^3} + 2\zeta(3)-1.$$
+
+PROVIDED SOLUTION:
+Since $\frac{1}{(n-\vartheta)^3} + \frac{1}{(n+\vartheta)^3}$ is even,
+we may replace $\vartheta$ by $|\vartheta|$. Then we rearrange the sum:
+$$\sum_{n=1}^\infty \left(\frac{1}{(n-|\vartheta|)^3} + \frac{1}{(n+|\vartheta|)^3}\right)
+  = \frac{1}{(1-|\vartheta|)^3}
+  + \sum_{n=1}^\infty \left(\frac{1}{\left(n+1-|\vartheta|\right)^3}
+  + \frac{1}{\left(n+|\vartheta|\right)^3}\right).$$
+We may write $(n+1-|\vartheta|)^3$, $(n+|\vartheta|)^3$
+as $(n+\frac{1}{2}-t)^3$, $(n+\frac{1}{2} + t)^3$ for $t = |\vartheta|-1/2$.
+Since $1/u^3$ is convex, $\frac{1}{(n+1/2-t)^3} + \frac{1}{(n+1/2+t)^3}$ reaches its
+maximum on $[-1/2,1/2]$ at the endpoints. Hence
+$$\sum_{n=1}^\infty \left(\frac{1}{\left(n+1-|\vartheta|\right)^3}
+  + \frac{1}{\left(n+|\vartheta|\right)^3}\right)
+  \leq \sum_{n=1}^\infty \left(\frac{1}{n^3} + \frac{1}{(n+1)^3}\right) = 2 \zeta(3)-1.
+$$
+-/
+lemma lemma_abadimpseri (ϑ : ℝ) (hϑ : |ϑ| < 1) :
+    ∑' n : ℕ, (1 / ((n + 1 : ℝ) - ϑ) ^ 3 + 1 / ((n + 1 : ℝ) + ϑ) ^ 3) ≤
+      1 / (1 - |ϑ|) ^ 3 + 2 * (riemannZeta 3).re - 1 := by
+  admit
+
+/-- **Estimate for a Fourier sum**
+
+Let $s = \sigma + i \tau$, $\sigma\geq 0$, $\tau \in \mathbb{R}$, with $s\ne 1$.
+Let $b>a>0$, $a, b\in \mathbb{Z} + \frac{1}{2}$, with $a>\frac{|\tau|}{2\pi}$.
+Define $f:\mathbb{R}\to\mathbb{C}$ by $f(y) = 1_{[a,b]}(y)/y^s$.
+Write $\vartheta = \frac{\tau}{2\pi a}$, $\vartheta_- = \frac{\tau}{2\pi b}$. Then
+$$\begin{aligned} \sum_n (\widehat{f}(n) + \widehat{f}(-n))
+  &= \frac{a^{-s} g(\vartheta)}{2 i} - \frac{b^{-s} g(\vartheta_-)}{2 i}
+  + O^*\left(\frac{C_{\sigma,\vartheta}}{a^{\sigma+1}}\right)\end{aligned}$$
+with absolute convergence,
+where $g(t) = \frac{1}{\sin \pi t} - \frac{1}{\pi t}$ for $t\ne 0$, $g(0)=0$, and
+$$C_{\sigma,\vartheta}= \begin{cases}
+  \frac{\sigma}{2} \left(\frac{1}{\sin^2\pi \vartheta} - \frac{1}{(\pi \vartheta)^2}\right)
+  + \frac{|\vartheta|}{2\pi^2} \left(\frac{1}{(1-|\vartheta|)^3} + 2\zeta(3)-1\right)
+  & \text{for $\vartheta\ne 0$,}\\
+  \sigma/6 & \text{for $\vartheta = 0$.}\end{cases}$$
+
+PROVIDED SOLUTION:
+By Proposition~`proposition_applem`, multiplying by $2$
+(since $e(-n t)+e(n t) = 2 \cos 2\pi n t$),
+\begin{align}\widehat{f}(n) + \widehat{f}(-n) &= \notag
+  \frac{a^{-s}}{2\pi i} \frac{(-1)^{n+1} 2\vartheta}{n^2 - \vartheta^2} -
+  \frac{b^{-s}}{2\pi i} \frac{(-1)^{n+1} 2\vartheta_-}{n^2 - \vartheta_-^2}
+  \\
+  &+ \frac{a^{-\sigma-1}}{2\pi^2} O^*\left(\frac{\sigma}{(n-\vartheta)^2}
+    + \frac{\sigma}{(n+\vartheta)^2} + \frac{|\vartheta|}{(n-\vartheta)^3}
+    + \frac{|\vartheta|}{(n+\vartheta)^3}\right),\end{align}
+where $\vartheta_- = \tau/(2\pi b)$. Note $|\vartheta_-|\leq |\vartheta|<1$.
+By the Lemma `lemma_abadeulmit1`,
+$$\sum_n \frac{(-1)^{n+1} 2 z}{n^2 - z^2} = \frac{\pi}{\sin \pi z} - \frac{1}{z}
+$$ for $z\ne 0$, while $\sum_n \frac{(-1)^{n+1} 2 z}{n^2 - z^2} = \sum_n 0 = 0$ for $z=0$.
+Moreover, by Lemmas `lemma_abadeulmit2` and `lemma_abadimpseri`, for $\vartheta\ne 0$,
+$$\sum_n \left(\frac{\sigma}{(n-\vartheta)^2} + \frac{\sigma}{(n+\vartheta)^2}\right)\leq
+\sigma\cdot \left(\frac{\pi^2}{\sin^2 \pi \vartheta} - \frac{1}{\vartheta^2}\right),$$
+$$\sum_n \left(\frac{|\vartheta|}{(n-\vartheta)^3} + \frac{|\vartheta|}{(n+\vartheta)^3}\right)
+\leq |\vartheta|\cdot \left(\frac{1}{(1-|\vartheta|)^3} + 2\zeta(3)-1\right).
+$$
+If $\vartheta=0$, then
+$\sum_n \left(\frac{\sigma}{(n-\vartheta)^2} + \frac{\sigma}{(n+\vartheta)^2}\right)
+= 2 \sigma \sum_{n=1}^\infty \frac{1}{n^2} = \sigma \frac{\pi^2}{3}$.
+-/
+theorem lemma_abadsumas {s : ℂ} (hs1 : s ≠ 1) (hsigma : 0 ≤ s.re) {a b : ℝ} (ha : 0 < a)
+    (hab : a < b) (ha' : a.IsHalfInteger) (hb' : b.IsHalfInteger) (haτ : a > |s.im| / (2 * π)) :
+    let ϑ : ℝ := s.im / (2 * π * a)
+    let ϑ_minus : ℝ := s.im / (2 * π * b)
+    let f : ℝ → ℂ := fun y ↦
+      if a ≤ y ∧ y ≤ b then (y ^ (-s.re) : ℝ) * e (-(s.im / (2 * π)) * Real.log y) else 0
+    let g : ℝ → ℂ := fun t ↦
+      if t ≠ 0 then (1 / Complex.sin (π * t) : ℂ) - (1 / (π * t : ℂ)) else 0
+    let C : ℝ :=
+      if ϑ ≠ 0 then
+        s.re / 2 * ((1 / (Complex.sin (π * ϑ) ^ 2 : ℂ)).re - (1 / ((π * ϑ) ^ 2 : ℂ)).re) +
+          |ϑ| / (2 * π ^ 2) * ((1 / ((1 - |ϑ|) ^ 3 : ℝ)) + 2 * (riemannZeta 3).re - 1)
+      else
+        s.re / 6
+    ∃ E : ℂ, ∑' n : ℕ,
+      (Real.fourierIntegral f (n + 1 : ℝ) + Real.fourierIntegral f (-(n + 1 : ℝ))) =
+      ((a ^ (-s) : ℂ) * g ϑ) / (2 * I) - ((b ^ (-s) : ℂ) * g ϑ_minus) / (2 * I) + E ∧
+      ‖E‖ ≤ C / a ^ (s.re + 1) := by
+  sorry
+
+/-- **Approximation of zeta(s) by a partial sum**
+
+Let $s = \sigma + i \tau$, $\sigma\geq 0$, $\tau\in \mathbb{R}$, with $s\ne 1$.
+Let $a\in \mathbb{Z} + \frac{1}{2}$ with $a>\frac{|\tau|}{2\pi}$. Then
+$$
+  \zeta(s) = \sum_{n\leq a} \frac{1}{n^s} - \frac{a^{1-s}}{1-s} + c_\vartheta a^{-s}
+  + O^*\left(\frac{C_{\sigma,\vartheta}}{a^{\sigma+1}}\right),
+$$
+where $\vartheta = \frac{\tau}{2\pi a}$,
+$c_\vartheta = \frac{i}{2} \left(\frac{1}{\sin \pi \vartheta} - \frac{1}{\pi \vartheta}\right)$
+for $\vartheta\ne 0$, $c_0 =0$, and $C_{\sigma,\vartheta}$ is as in (equation eq:defcsigth).
+
+PROVIDED SOLUTION:
+Assume first that $\sigma>0$. Let $b\in \mathbb{Z}+\frac{1}{2}$ with $b>a$, and define
+$f(y) = \frac{1_{[a,b]}(y)}{y^s}$.
+By Lemma~`lemma_abadtoabsum` and Lemma~`lemma_abadusepoisson`,
+$$\sum_{n\leq a} \frac{1}{n^s} = \zeta(s) + \frac{a^{1-s}}{1-s}
+  - \lim_{N\to \infty} \sum_{n=1}^N (\widehat{f}(n) + \widehat{f}(-n))
+  + O^*\left(\frac{2 |s|}{\sigma b^\sigma}\right).$$
+We apply Lemma~`lemma_abadsumas` to estimate
+$\lim_{N\to \infty} \sum_{n=1}^N (\widehat{f}(n) + \widehat{f}(-n))$. We obtain
+$$\sum_{n\leq a} \frac{1}{n^s} = \zeta(s) + \frac{a^{1-s}}{1-s} -
+\frac{a^{-s} g(\vartheta)}{2 i} + O^*\left(\frac{C_{\sigma,\vartheta}}{a^{\sigma+1}}\right)
++ \frac{b^{-s} g(\vartheta_-)}{2 i} + O^*\left(\frac{2 |s|}{\sigma b^\sigma}\right),
+$$
+where $\vartheta_- = \frac{\tau}{2\pi b}$ and $g(t)$ is as in Lemma~`lemma_abadsumas`,
+and so $-\frac{g(\vartheta)}{2 i} = c_\vartheta$.
+We let $b\to \infty$ through the half-integers, and obtain (equation eq:abadlondie),
+since $b^{-\sigma}\to 0$, $\vartheta_-\to 0$ and $g(\vartheta_-)\to g(0) = 0$
+as $b\to \infty$.
+
+Finally, the case $\sigma=0$ follows since all terms in (equation eq:abadlondie) extend
+continuously to $\sigma=0$.
+-/
+theorem proposition_dadaro {s : ℂ} (hs1 : s ≠ 1) (hsigma : 0 ≤ s.re) {a : ℝ} (ha : 0 < a)
+    (ha' : a.IsHalfInteger) (haτ : a > |s.im| / (2 * π)) :
+    let ϑ : ℝ := s.im / (2 * π * a)
+    let C : ℝ :=
+      if ϑ ≠ 0 then
+        s.re / 2 * ((1 / (Complex.sin (π * ϑ) ^ 2 : ℂ)).re - (1 / ((π * ϑ) ^ 2 : ℂ)).re) +
+          |ϑ| / (2 * π ^ 2) * ((1 / ((1 - |ϑ|) ^ 3 : ℝ)) + 2 * (riemannZeta 3).re - 1)
+      else
+        s.re / 6
+    let c : ℂ :=
+      if ϑ ≠ 0 then
+        I / 2 * ((1 / Complex.sin (π * ϑ) : ℂ) - (1 / (π * ϑ : ℂ)))
+      else
+        0
+    ∃ E : ℂ, riemannZeta s =
+      ∑ n ∈ Icc 1 ⌊a⌋₊, (n : ℂ) ^ (-s) -
+      (a ^ (1 - s) : ℂ) / (1 - s) + c * (a ^ (-s) : ℂ) + E ∧
+      ‖E‖ ≤ C / (a ^ (s.re + 1 : ℝ)) := by
+  sorry
+
+
+/-!
+**Remark:** The term $c_\vartheta a^{-s}$ in (equation eq:abadlondie) does not seem to have been worked
+out before in the literature; the factor of $i$ in $c_\vartheta$ was a surprise.
+For the sake of comparison, let us note that, if $a\geq x$, then $|\vartheta|\leq 1/2\pi$,
+and so $|c_\vartheta|\leq |c_{\pm 1/2\pi}| = 0.04291\dotsc$ and
+$|C_{\sigma,\vartheta}|\leq |C_{\sigma,\pm 1/2\pi}|\leq 0.176\sigma +0.246$.
+While $c_\vartheta$ is optimal, $C_{\sigma,\vartheta}$ need not be --
+but then that is irrelevant for most applications.
+-/
+
+end ZetaAppendix

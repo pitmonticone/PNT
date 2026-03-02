@@ -402,6 +402,65 @@ lemma Finsupp.abs_sum_le (A : Type*) (ν : A →₀ ℝ) (g : A → ℝ → ℝ)
   simp_rw [Finsupp.sum.eq_1]
   exact abs_sum_le_sum_abs (fun i ↦ g i (ν i)) ν.support
 
+noncomputable def e (x : ℝ) : ℝ :=
+  (T x - (x * log x - x + 1))
+
+lemma lemma_1 (x : ℝ) : T x = x * log x - x + 1 + (e x) := by
+  unfold e
+  ring
+
+lemma lemma_2 (x : ℝ) (hx : 1 ≤ x) : |e x| ≤ log x := by
+  rw [abs_le]
+  unfold e
+  constructor <;> linarith [T.ge x hx, T.le x hx]
+
+lemma lemma_3 (x : ℝ) :
+    U x = ν.sum (fun m w ↦ w * ((x / m) * (log (x / m))))
+          - ν.sum (fun m w ↦ w * (x / m))
+          + ν.sum (fun _m w ↦ w)
+          + ν.sum (fun m w ↦ w * e (x / m)) := by
+  unfold U
+  simp [Finsupp.sum, lemma_1, sub_eq_add_neg, add_mul, mul_comm, Finset.sum_add_distrib]
+
+lemma lemma_4 (x : ℝ) (hx : 0 < x) :
+    ν.sum (fun m w ↦ w * ((x / m) * log (x / m))) = a * x := by
+  have hx0 : x ≠ 0 := ne_of_gt hx
+  rw [ν,
+    Finsupp.sum_add_index (by simp) (by intros; ring),
+    Finsupp.sum_sub_index (by intros; ring),
+    Finsupp.sum_sub_index (by intros; ring),
+    Finsupp.sum_sub_index (by intros; ring)]
+  rw [a, ν,
+    Finsupp.sum_add_index (by simp) (by intros; ring),
+    Finsupp.sum_sub_index (by intros; ring),
+    Finsupp.sum_sub_index (by intros; ring),
+    Finsupp.sum_sub_index (by intros; ring)]
+  simp [sub_eq_add_neg,
+    Real.log_div hx0]
+  ring
+
+lemma lemma_5 (x : ℝ) :
+    ν.sum (fun m w ↦ w * (x / m)) = 0 := by
+  rw [ν,
+    Finsupp.sum_add_index (by simp) (by intros; ring),
+    Finsupp.sum_sub_index (by intros; ring),
+    Finsupp.sum_sub_index (by intros; ring),
+    Finsupp.sum_sub_index (by intros; ring)]
+  simp [div_eq_mul_inv, sub_eq_add_neg]
+  ring_nf
+
+lemma lemma_6 : ν.sum (fun _ w ↦ w) = (-1 : ℝ) := by
+  rw [ν,
+    Finsupp.sum_add_index (by simp) (by intros; ring),
+    Finsupp.sum_sub_index (by intros; simp),
+    Finsupp.sum_sub_index (by intros; simp),
+    Finsupp.sum_sub_index (by intros; simp)]
+  simp
+
+lemma Finsupp.abs_sum_le (A : Type*) (ν : A →₀ ℝ) (g : A → ℝ → ℝ) : |ν.sum g| ≤ ν.sum |g| := by
+  simp_rw [Finsupp.sum.eq_1]
+  exact Finset.abs_sum_le_sum_abs (fun i ↦ g i (ν i)) ν.support
+
 @[blueprint
   "U-bounds"
   (title := "Bounds for $U$")

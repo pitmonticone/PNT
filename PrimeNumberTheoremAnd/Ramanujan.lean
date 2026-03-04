@@ -593,18 +593,6 @@ theorem pi_bound_5 (x : ℝ) (hx : x ∈ Set.Ico (exp 2000) (exp 3000)) :
   have h8 : 411.4 + 0.1 = (411.5 : ℝ) := by norm_num
   simpa [h8, admissible_bound, sqrt_eq_rpow] using h7
 
-@[blueprint
-  "ramanujan-pibound-6"
-  (title := "Error estimate for theta, range 6")
-  (statement := /-- For $x > \exp(3000)$ we have
-$$E_\theta(x) \leq 379.7\left(\frac{\log x}{5.573412}\right)^{1.52}\exp\left(-1.89\sqrt{\frac{\log x}{5.573412}}\right).$$-/)
-  (proof := /-- This follows from Corollary \ref{pt_cor_1}. -/)
-  (latexEnv := "sublemma")
-  (discussion := 1094)]
-theorem pi_bound_6 (x : ℝ) (hx : exp 3000 ≤ x) :
-    Eθ x ≤ 379.7 * (log x / 5.573412) ^ (1.52 : ℝ) * exp (-1.89 * sqrt (log x / 5.573412)) := by
-    sorry
-
 noncomputable def a (x : ℝ) : ℝ := (log x)^5 * (
   if x ∈ Set.Ico 2 599 then 1 - log 2 / 3
   else if x ∈ Set.Ico 599 (exp 58) then log x ^ 2 / (8 * π * sqrt x)
@@ -720,7 +708,21 @@ theorem epsilon_bound :
   (proof := /-- \cite[Theorem 2]{PT2021} This follows from the previous lemmas and calculations, including the criterion for Ramanujan's inequality. -/)
   (latexEnv := "theorem")
   (discussion := 999)]
-theorem ramanujan_final : ∀ x > exₐ, pi x ^ 2 < exp 1 * x / log x * pi (x / exp 1) := criterion (mₐ xₐ) (Mₐ exₐ) xₐ exₐ pi_lower_specific pi_upper_specific (le_refl _) epsilon_bound
+theorem ramanujan_final : ∀ x > exp 1 * xₐ, pi x ^ 2 < exp 1 * x / log x * pi (x / exp 1) := by
+  intro x hx
+  apply criterion mₐ Mₐ xₐ pi_lower_specific pi_upper_specific x
+  simp only [gt_iff_lt] at hx ⊢
+  exact max_lt hx (calc
+    x' mₐ Mₐ xₐ < 1 := by
+      change rexp (ε Mₐ xₐ - ε' mₐ xₐ) < 1
+      rw [exp_lt_one_iff]
+      convert epsilon_bound using 1
+    _ ≤ rexp 1 * xₐ := by
+      have : (1 : ℝ) ≤ rexp 1 := one_le_exp (by norm_num : (0:ℝ) ≤ 1)
+      have : (1 : ℝ) ≤ xₐ := one_le_exp (show (0:ℝ) ≤ 3914 by norm_num)
+      nlinarith
+    _ < x := hx)
+
 
 
 end Ramanujan
